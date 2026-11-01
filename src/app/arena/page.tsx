@@ -2,30 +2,20 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CartaPersonaggio } from "@/components/scena/CartaPersonaggio";
+import { EROI, NEMICI, UNIVERSI, arenaDi, combattenteDa, trovaEroe, trovaNemico, type SchedaNemico } from "@/data";
 import type { Essenza } from "@/lib/personaggio/essenza";
-import { essenzaDemo } from "@/lib/personaggio/demo";
 import { caricaPersonaggio } from "@/lib/personaggio/salvataggio";
 import type { Combattente, Copione, Mossa, TiroRegistrato } from "@/lib/rules/types";
 
-const ArenaScena = dynamic(() => import("@/components/three/ArenaScena"), { ssr: false });
+const ScenaCartoncini = dynamic(() => import("@/components/scena/ScenaCartoncini"), { ssr: false });
 
-const NEMICO_DESCRIZIONE =
-  "Un predone delle lande, imponente e robusto, con un elmo di latta, vestiti marroni e grigi, una cicatrice e pugni corazzati. Si chiama Grosso Bruno.";
-
-const MOSSE_NEMICO: Mossa[] = [
-  { archetipo: "fendente", elemento: "cinetico", intensita: 1, nome: "Pugno di latta" },
-  { archetipo: "proiettile", elemento: "tossico", intensita: 1, nome: "Barattolo radioattivo" },
-  { archetipo: "area_esplosiva", elemento: "fuoco", intensita: 2, nome: "Bidone esplosivo" },
-  { archetipo: "raffica", elemento: "cinetico", intensita: 1, nome: "Gragnola di pugni" },
-];
-
-const SUGGERIMENTI = [
-  "Lancio una bottiglia incendiaria contro il predone",
-  "Carico un fendente con la spada, con tutta la forza",
-  "Sparo un raggio di plasma dal braccio meccanico",
+const SUGGERIMENTI_GENERICI = [
+  "Carico un fendente con tutta la forza",
+  "Lancio una bottiglia incendiaria",
   "Evoco uno sciame di rottami che gli piove addosso",
-  "Mi riparo dietro uno scudo di lamiere",
+  "Mi riparo dietro uno scudo",
   "Mi curo con una benda e un sorso d'acqua",
 ];
 
@@ -35,13 +25,11 @@ interface Voce {
   tiri?: TiroRegistrato[];
 }
 
-function daEssenza(id: string, e: Essenza, bonusPv = 0): Combattente {
-  const pvMax = 20 + e.statistiche.tempra + bonusPv;
-  return { id, nome: e.nome, statistiche: e.statistiche, pv: pvMax, pvMax, energia: 10, energiaMax: 10, stati: [] };
-}
-
-function descriviTiri(tiri: TiroRegistrato[]) {
-  return tiri.map((t) => `${t.scopo} ${t.formula} → [${t.risultati.join(", ")}]`).join(" · ");
+interface Eroe {
+  id: string;
+  essenza: Essenza;
+  immagine?: string;
+  suggerimenti: string[];
 }
 
 interface ScenaInCorso {
@@ -51,43 +39,107 @@ interface ScenaInCorso {
   diNemico: boolean;
 }
 
+function descriviTiri(tiri: TiroRegistrato[]) {
+  return tiri.map((t) => `${t.scopo} ${t.formula} → [${t.risultati.join(", ")}]`).join(" · ");
+}
+
 export default function Arena() {
-  const [essenzaGiocatore, setEssenzaGiocatore] = useState<Essenza | null>(null);
-  const essenzaNemico = useRef(essenzaDemo(NEMICO_DESCRIZIONE)).current;
-  const [giocatore, setGiocatore] = useState<Combattente | null>(null);
-  const [nemico, setNemico] = useState<Combattente>(() => daEssenza("nemico", essenzaNemico, 6));
-  const [diario, setDiario] = useState<Voce[]>([]);
+  const [mio, setMio] = useState<Essenza | null>(null);
+  const [eroeId, setEroeId] = useState<string>("mio");
+  const [nemicoId, setNemicoId] = useState<string>("grosso_bruno");
+  const [inCorso, setInCorso] = useState(false);
+
+  useEffect(() => {
+    setMio(caricaPersonaggio());
+    const q = new URLSearchParams(window.location.search);
+    const e = q.get("eroe");
+    const n = q.get("nemico");
+    if (e && trovaEroe(e)) setEroeId(e);
+    if (n && trovaNemico(n)) setNemicoId(n);
+    else if (e && trovaEroe(e)) setNemicoId(NEMICI.find((x) => x.universo === trovaEroe(e)!.universo)!.id);
+  }, []);
+
+  if (!mio) return <main className="contenitore tenue">Apertura del varco...</main>;
+
+  const scheda = trovaEroe(eroeId);
+  const eroe: Eroe = scheda
+    ? { id: scheda.id, essenza: scheda.essenza, immagine: scheda.immagine, suggerimenti: [...scheda.mosseFirma.map((m) => m.frase), ...SUGGERIMENTI_GENERICI.slice(3)] }
+    : { id: "mio", essenza: mio, suggerimenti: SUGGERIMENTI_GENERICI };
+  const nemico = trovaNemico(nemicoId)!;
+
+  if (inCorso) return <Combattimento eroe={eroe} nemico={nemico} onEsci={() => setInCorso(false)} />;
+
+  const arena = arenaDi(nemico.universo);
+  return (
+    <main className="contenitore">
+      <p className="piccolo"><Link href="/">← VARCO</Link> · <Link href="/galleria">galleria</Link></p>
+      <h1>Arena</h1>
+      <p className="tenue">Scegli chi combatte e contro chi. Il luogo dipende dall&apos;universo del nemico.</p>
+
+      <h2 style={{ marginTop: 20 }}>Il tuo eroe</h2>
+      <div className="griglia-carte" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
+        {[{ id: "mio", essenza: mio, sotto: "il tuo personaggio" }, ...EROI.map((e) => ({ id: e.id, essenza: e.essenza, sotto: e.classe, immagine: e.immagine }))].map((e) => (
+          <button key={e.id} className={`carta scelta ${eroeId === e.id ? "selezionata" : ""}`} onClick={() => setEroeId(e.id)} style={{ padding: 0, background: "var(--pannello)", color: "inherit", textAlign: "left" }}>
+            <div className="carta-figura"><CartaPersonaggio essenza={e.essenza} immagine={"immagine" in e ? e.immagine : undefined} arena={arena.id} /></div>
+            <div className="carta-testo"><strong className="piccolo">{e.essenza.nome}</strong><span className="tenue piccolo">{e.sotto}</span></div>
+          </button>
+        ))}
+      </div>
+
+      <h2 style={{ marginTop: 24 }}>Il nemico</h2>
+      {Object.values(UNIVERSI).map((u) => (
+        <div key={u.id} style={{ marginBottom: 12 }}>
+          <p className="piccolo tenue" style={{ margin: "4px 0" }}>{u.nome} · {u.sottotitolo}</p>
+          <div className="riga">
+            {NEMICI.filter((n) => n.universo === u.id).map((n) => (
+              <button key={n.id} className={nemicoId === n.id ? "" : "secondario"} onClick={() => setNemicoId(n.id)}>
+                {n.essenza.nome} <span className="piccolo" style={{ opacity: 0.7 }}>· {n.rango}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <div className="pannello riga" style={{ marginTop: 20, justifyContent: "space-between" }}>
+        <span><strong>{eroe.essenza.nome}</strong> contro <strong>{nemico.essenza.nome}</strong> · {arena.nome}</span>
+        <button onClick={() => setInCorso(true)}>Entra nel varco ⚔</button>
+      </div>
+    </main>
+  );
+}
+
+function Combattimento({ eroe, nemico: schedaNemico, onEsci }: { eroe: Eroe; nemico: SchedaNemico; onEsci: () => void }) {
+  const arena = arenaDi(schedaNemico.universo);
+  const nuovoGiocatore = useCallback(() => combattenteDa("giocatore", eroe.essenza), [eroe.essenza]);
+  const nuovoNemico = useCallback(() => combattenteDa("nemico", schedaNemico.essenza, schedaNemico.pvBonus), [schedaNemico]);
+  const introduzione = useCallback(
+    (): Voce[] => [{ tipo: "gm", testo: `${arena.descrizione} ${schedaNemico.ingresso} Cosa fai?` }],
+    [arena.descrizione, schedaNemico.ingresso],
+  );
+
+  const [giocatore, setGiocatore] = useState<Combattente>(nuovoGiocatore);
+  const [nemico, setNemico] = useState<Combattente>(nuovoNemico);
+  const [diario, setDiario] = useState<Voce[]>(introduzione);
   const [testo, setTesto] = useState("");
   const [inAttesa, setInAttesa] = useState(false);
   const [scena, setScena] = useState<ScenaInCorso | null>(null);
   const [didascaliaVisibile, setDidascaliaVisibile] = useState(false);
   const partita = useRef(`arena-${Date.now().toString(36)}`);
   const turno = useRef(0);
+  const turnoNemico = useRef(0);
   const fineDiario = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const e = caricaPersonaggio();
-    setEssenzaGiocatore(e);
-    setGiocatore(daEssenza("giocatore", e));
-    setDiario([
-      {
-        tipo: "gm",
-        testo: `L'autostrada è un cimitero di lamiere. Dal fumo di un'autocisterna emerge ${essenzaNemico.nome}, un predone grosso come un armadio, che batte i pugni corazzati. "Quello che hai addosso adesso è mio." Cosa fai?`,
-      },
-    ]);
-  }, [essenzaNemico.nome]);
 
   useEffect(() => {
     fineDiario.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [diario]);
 
-  const finita = !!giocatore && (giocatore.pv === 0 || nemico.pv === 0);
+  const finita = giocatore.pv === 0 || nemico.pv === 0;
 
   async function turnoDi(attore: Combattente, bersaglio: Combattente, corpo: { testo?: string; mossa?: Mossa }, diNemico: boolean) {
     const res = await fetch("/api/mossa", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ partita: partita.current, turno: turno.current++, arena: "postapo_autostrada", attore, bersaglio, ...corpo }),
+      body: JSON.stringify({ partita: partita.current, turno: turno.current++, arena: arena.id, attore, bersaglio, ...corpo }),
     });
     const dati = await res.json();
     if (!res.ok) throw new Error(dati.errore ?? "Errore del server");
@@ -98,7 +150,7 @@ export default function Arena() {
 
   async function agisci(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!giocatore || !testo.trim() || inAttesa || finita) return;
+    if (!testo.trim() || inAttesa || finita) return;
     const frase = testo.trim();
     setTesto("");
     setInAttesa(true);
@@ -111,7 +163,7 @@ export default function Arena() {
     }
   }
 
-  /** Fine della scena 3D: si applicano i risultati, si torna al testo, poi tocca al nemico. */
+  /** Fine della scena: si applicano i risultati, si torna al testo, poi tocca al nemico. */
   function fineScena() {
     if (!scena) return;
     const { copione, attore, bersaglio, diNemico } = scena;
@@ -123,42 +175,37 @@ export default function Arena() {
     setDiario((d) => [...d, { tipo: diNemico ? "nemico" : "gm", testo: copione.didascalia, tiri: copione.tiri }]);
 
     if (copione.ko) {
-      setDiario((d) => [
-        ...d,
-        { tipo: "sistema", testo: diNemico ? `${g.nome} è a terra. Il varco si richiude... per ora.` : `${n.nome} crolla tra le lamiere. Vittoria!` },
-      ]);
+      setDiario((d) => [...d, { tipo: "sistema", testo: diNemico ? `${g.nome} è a terra. Il varco si richiude... per ora.` : `${n.nome} crolla. Vittoria!` }]);
       setInAttesa(false);
       return;
     }
     if (!diNemico) {
-      const mossa = MOSSE_NEMICO[turno.current % MOSSE_NEMICO.length];
+      const { nome, archetipo, elemento, intensita } = schedaNemico.mosse[turnoNemico.current++ % schedaNemico.mosse.length];
       setTimeout(() => {
-        turnoDi(n, g, { mossa }, true).catch((err) => {
+        turnoDi(n, g, { mossa: { nome, archetipo, elemento, intensita } }, true).catch((err) => {
           setDiario((d) => [...d, { tipo: "sistema", testo: err instanceof Error ? err.message : "Errore" }]);
           setInAttesa(false);
         });
-      }, 1200);
+      }, 1000);
     } else {
       setInAttesa(false);
     }
   }
 
   function rigioca() {
-    if (!essenzaGiocatore) return;
-    setGiocatore(daEssenza("giocatore", essenzaGiocatore));
-    setNemico(daEssenza("nemico", essenzaNemico, 6));
-    setDiario([{ tipo: "gm", testo: `${essenzaNemico.nome} si rialza, sputa polvere e ride. "Secondo round."` }]);
+    setGiocatore(nuovoGiocatore());
+    setNemico(nuovoNemico());
+    setDiario([{ tipo: "gm", testo: `${schedaNemico.essenza.nome} si rialza. "Secondo round."` }]);
     partita.current = `arena-${Date.now().toString(36)}`;
     turno.current = 0;
+    turnoNemico.current = 0;
   }
-
-  if (!giocatore || !essenzaGiocatore) return <main className="contenitore tenue">Apertura del varco...</main>;
 
   return (
     <main className="contenitore" style={{ maxWidth: 760 }}>
-      <p className="piccolo"><Link href="/">← VARCO</Link> · <Link href="/crea">cambia personaggio</Link></p>
-      <h1>Autostrada in rovina</h1>
-      <p className="tenue piccolo">Post-apocalisse · scrivi la tua mossa: il codice tira i dadi, poi la scena clou parte in 3D.</p>
+      <p className="piccolo"><button className="secondario piccolo" style={{ padding: "2px 10px" }} onClick={onEsci}>← cambia sfida</button></p>
+      <h1>{arena.nome}</h1>
+      <p className="tenue piccolo">{UNIVERSI[schedaNemico.universo].sottotitolo} · scrivi la tua mossa: il codice tira i dadi, poi parte la scena.</p>
 
       <div className="griglia-2" style={{ margin: "16px 0" }}>
         {[giocatore, nemico].map((c) => (
@@ -188,6 +235,7 @@ export default function Arena() {
       {finita ? (
         <div className="riga" style={{ marginTop: 16 }}>
           <button onClick={rigioca}>Rigioca</button>
+          <button className="secondario" onClick={onEsci}>Cambia sfida</button>
         </div>
       ) : (
         <form onSubmit={agisci} style={{ display: "grid", gap: 8, marginTop: 16 }}>
@@ -206,7 +254,7 @@ export default function Arena() {
             <button type="submit" disabled={inAttesa || !testo.trim()}>{inAttesa ? "Turno in corso..." : "Agisci"}</button>
           </div>
           <div className="riga">
-            {SUGGERIMENTI.map((s) => (
+            {eroe.suggerimenti.map((s) => (
               <button key={s} type="button" className="secondario piccolo" style={{ padding: "4px 10px" }} onClick={() => setTesto(s)} disabled={inAttesa}>
                 {s}
               </button>
@@ -217,11 +265,12 @@ export default function Arena() {
 
       {scena && (
         <div className="scena-clou" role="dialog" aria-label="Scena di combattimento">
-          <ArenaScena
+          <ScenaCartoncini
             key={scena.copione.seme}
-            sinistra={{ id: "giocatore", essenza: essenzaGiocatore, ko: giocatore.pv === 0 }}
-            destra={{ id: "nemico", essenza: essenzaNemico, ko: nemico.pv === 0 }}
+            sinistra={{ id: "giocatore", essenza: eroe.essenza, immagine: eroe.immagine, ko: giocatore.pv === 0 }}
+            destra={{ id: "nemico", essenza: schedaNemico.essenza, immagine: schedaNemico.immagine, ko: nemico.pv === 0 }}
             copione={scena.copione}
+            immagineSfondo={arena.immagine}
             onFine={fineScena}
           />
           <span className="marchio">VARCO</span>

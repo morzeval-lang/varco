@@ -1,34 +1,30 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { Azione } from "@/components/three/Personaggio";
+import { CartaPersonaggio } from "@/components/scena/CartaPersonaggio";
+import { EROI, UNIVERSI, arenaDi, type IdUniverso } from "@/data";
 import type { Essenza } from "@/lib/personaggio/essenza";
 import { caricaPersonaggio, DESCRIZIONE_ESEMPIO, salvaPersonaggio } from "@/lib/personaggio/salvataggio";
 
-const Piedistallo = dynamic(() => import("@/components/three/Piedistallo"), { ssr: false });
-
-const AZIONI: [Azione, string][] = [
-  ["idle", "Riposo"],
-  ["attacco", "Attacco"],
-  ["lancio", "Lancio"],
-  ["difesa", "Difesa"],
-  ["colpito", "Colpito"],
-  ["vittoria", "Vittoria"],
-  ["ko", "KO"],
-];
-
 const ETICHETTE_STAT = { forza: "Forza", agilita: "Agilità", mente: "Mente", tempra: "Tempra" } as const;
+
+/** Spunti per chi non sa da dove partire: stereotipi classici da personalizzare. */
+const SPUNTI = [
+  "Un paladino anziano e burbero, con un'armatura dorata ammaccata e uno scudo con un leone, che cura i compagni con la luce.",
+  "Una ladra elfica esile con un cappuccio verde, capelli lunghi argentati e due pugnali, ironica e velocissima.",
+  "Un mago giovane e goffo con un bastone di cristallo azzurro, mantello blu stellato e occhi che brillano quando lancia incantesimi.",
+  "Un'ex meccanica gigante e robusta, con un braccio meccanico che spara chiodi, capelli a cresta rosa e una tuta arancione.",
+  "Un cacciatore di mutanti con un fucile, un occhio cibernetico rosso, cicatrice sul volto e un cappotto marrone logoro.",
+];
 
 export default function CreaPersonaggio() {
   const [descrizione, setDescrizione] = useState(DESCRIZIONE_ESEMPIO);
   const [essenza, setEssenza] = useState<Essenza | null>(null);
-  const [fonte, setFonte] = useState<"claude" | "demo" | null>(null);
+  const [fonte, setFonte] = useState<"claude" | "demo" | "catalogo" | null>(null);
+  const [universo, setUniverso] = useState<IdUniverso>("post_apocalisse");
   const [caricamento, setCaricamento] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
-  const [azione, setAzione] = useState<Azione>("idle");
-  const [azioneId, setAzioneId] = useState(0);
 
   useEffect(() => setEssenza(caricaPersonaggio()), []);
 
@@ -46,7 +42,6 @@ export default function CreaPersonaggio() {
       setEssenza(dati.essenza);
       setFonte(dati.fonte);
       salvaPersonaggio(dati.essenza);
-      prova("vittoria");
     } catch (e) {
       setErrore(e instanceof Error ? e.message : "Errore sconosciuto");
     } finally {
@@ -54,16 +49,23 @@ export default function CreaPersonaggio() {
     }
   }
 
-  function prova(a: Azione) {
-    setAzione(a);
-    setAzioneId((n) => n + 1);
+  function scegliEroe(id: string) {
+    const eroe = EROI.find((e) => e.id === id);
+    if (!eroe) return;
+    setEssenza(eroe.essenza);
+    setDescrizione(eroe.descrizione);
+    setUniverso(eroe.universo);
+    setFonte("catalogo");
+    salvaPersonaggio(eroe.essenza);
   }
+
+  const arena = arenaDi(universo);
 
   return (
     <main className="contenitore">
       <p className="piccolo"><Link href="/">← VARCO</Link></p>
       <h1>Crea il tuo personaggio</h1>
-      <p className="tenue">Descrivilo come vuoi: aspetto, segni particolari, arma, carattere.</p>
+      <p className="tenue">Descrivilo come vuoi: aspetto, segni particolari, arma, carattere. Oppure parti da un eroe pronto.</p>
 
       <div className="griglia-2" style={{ marginTop: 16 }}>
         <section className="pannello" style={{ display: "grid", gap: 12, alignContent: "start" }}>
@@ -72,12 +74,20 @@ export default function CreaPersonaggio() {
             <button onClick={genera} disabled={caricamento || descrizione.trim().length < 3}>
               {caricamento ? "Il varco si apre..." : "Genera personaggio"}
             </button>
-            {fonte && <span className="etichetta">{fonte === "claude" ? "creato da Claude" : "modalità demo"}</span>}
+            {fonte && <span className="etichetta">{fonte === "claude" ? "creato da Claude" : fonte === "catalogo" ? "eroe pronto" : "modalità demo"}</span>}
           </div>
           {errore && <p style={{ color: "var(--pericolo)" }}>{errore}</p>}
+          <div className="riga">
+            <span className="piccolo tenue">Spunti:</span>
+            {SPUNTI.map((s, i) => (
+              <button key={i} className="secondario piccolo" style={{ padding: "4px 10px" }} onClick={() => setDescrizione(s)}>
+                {s.split(",")[0]}
+              </button>
+            ))}
+          </div>
 
           {essenza && (
-            <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "grid", gap: 10, borderTop: "1px solid var(--bordo)", paddingTop: 12 }}>
               <div>
                 <h2 style={{ marginBottom: 4 }}>{essenza.nome}</h2>
                 <p className="tenue" style={{ margin: 0 }}>{essenza.concetto}</p>
@@ -95,30 +105,37 @@ export default function CreaPersonaggio() {
                   <span className="piccolo">{essenza.statistiche[k]}</span>
                 </div>
               ))}
-              <div className="riga" style={{ marginTop: 4 }}>
-                <span className="piccolo" style={{ display: "inline-flex", gap: 4 }}>
-                  {Object.values(essenza.palette).map((c) => (
-                    <span key={c} style={{ width: 16, height: 16, borderRadius: 4, background: c, display: "inline-block" }} />
-                  ))}
-                </span>
-                <Link href="/arena"><button className="secondario">Porta {essenza.nome} in arena →</button></Link>
-              </div>
+              <Link href="/arena"><button className="secondario">Porta {essenza.nome} in arena →</button></Link>
             </div>
           )}
         </section>
 
-        <section className="pannello" style={{ padding: 0, overflow: "hidden", display: "grid", gridTemplateRows: "1fr auto" }}>
-          <div style={{ height: 460 }}>{essenza && <Piedistallo essenza={essenza} azione={azione} azioneId={azioneId} />}</div>
-          <div className="riga" style={{ padding: 12, borderTop: "1px solid var(--bordo)" }}>
-            {AZIONI.map(([a, label]) => (
-              <button key={a} className="secondario" onClick={() => prova(a)} style={{ padding: "6px 10px" }}>{label}</button>
+        <section className="pannello" style={{ padding: 0, overflow: "hidden", display: "grid", gridTemplateRows: "auto 1fr" }}>
+          <div className="riga" style={{ padding: 12, borderBottom: "1px solid var(--bordo)" }}>
+            <span className="piccolo tenue">Forma in:</span>
+            {Object.values(UNIVERSI).map((u) => (
+              <button key={u.id} className={u.id === universo ? "" : "secondario"} style={{ padding: "4px 10px" }} onClick={() => setUniverso(u.id)}>
+                {u.sottotitolo}
+              </button>
             ))}
+          </div>
+          <div style={{ aspectRatio: "620 / 785", background: "#000" }}>
+            {essenza && <CartaPersonaggio essenza={essenza} arena={arena.id} immagineSfondo={arena.immagine} />}
           </div>
         </section>
       </div>
+
+      <h2 style={{ marginTop: 32 }}>Oppure scegli un eroe pronto</h2>
+      <div className="riga">
+        {EROI.map((e) => (
+          <button key={e.id} className="secondario" onClick={() => scegliEroe(e.id)}>
+            {e.essenza.nome} <span className="tenue piccolo">· {e.classe}</span>
+          </button>
+        ))}
+      </div>
       <p className="tenue piccolo" style={{ marginTop: 16 }}>
-        Prototipo: il modello è costruito dal kit modulare a partire dall&apos;Essenza. Il modello generato con
-        un servizio text-to-3D arriva nel passo successivo della Fase 0.
+        La figura è un segnaposto disegnato dal codice. Le illustrazioni anime definitive si aggiungono in
+        <code> public/immagini</code> (vedi <code>docs/stile-grafico.md</code>).
       </p>
     </main>
   );

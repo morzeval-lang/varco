@@ -128,3 +128,14 @@ button.secondario { background: transparent; color: var(--testo); border: 1px so
 .voce.gm { border-left: 3px solid var(--accento-2); }
 .voce.nemico { border-left: 3px solid var(--pericolo); }
 .voce .tiri { font-family: ui-monospace, Menlo, monospace; font-size: 0.75rem; color: var(--testo-tenue); margin-top: 4px; }
+
+.griglia-carte { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.carta { background: var(--pannello); border: 1px solid var(--bordo); border-radius: 12px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; }
+.carta-figura { aspect-ratio: 620 / 785; background: #000; }
+.carta-testo { padding: 12px; display: grid; gap: 6px; align-content: start; }
+.carta-testo h3 { margin: 0; }
+.carta-testo p { margin: 0; }
+.etichetta.rango-boss { color: #ffd24a; border-color: #ffd24a; }
+.etichetta.rango-campione { color: #ff9a8a; border-color: #ff9a8a; }
+.scelta { cursor: pointer; border: 2px solid transparent; }
+.scelta.selezionata { border-color: var(--accento); }
