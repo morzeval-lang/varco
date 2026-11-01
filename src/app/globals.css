@@ -1,0 +1,130 @@
+:root {
+  --bg: #0f0d16;
+  --pannello: #1a1726;
+  --bordo: #2e2a40;
+  --testo: #ece8f6;
+  --testo-tenue: #a49fb8;
+  --accento: #ffb347;
+  --accento-2: #7c6cff;
+  --pericolo: #ff5d5d;
+  --ok: #4fd18b;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--testo);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+a { color: var(--accento); }
+
+.contenitore { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+
+h1, h2, h3 { line-height: 1.2; margin: 0 0 12px; }
+
+.pannello {
+  background: var(--pannello);
+  border: 1px solid var(--bordo);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.griglia-2 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 860px) { .griglia-2 { grid-template-columns: 1fr 1fr; } }
+
+textarea, input, select {
+  width: 100%;
+  background: #110f1a;
+  color: var(--testo);
+  border: 1px solid var(--bordo);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+textarea { min-height: 120px; resize: vertical; }
+
+button {
+  background: var(--accento);
+  color: #1b1408;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: wait; }
+button.secondario { background: transparent; color: var(--testo); border: 1px solid var(--bordo); }
+
+.tenue { color: var(--testo-tenue); }
+.piccolo { font-size: 0.875rem; }
+.riga { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.barra { height: 8px; background: #110f1a; border-radius: 4px; overflow: hidden; }
+.barra > span { display: block; height: 100%; background: var(--accento-2); transition: width 0.6s ease; }
+.barra.pv > span { background: var(--ok); }
+
+.etichetta {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--bordo);
+  color: var(--testo-tenue);
+}
+
+.popup-danno {
+  font-weight: 800;
+  font-size: 28px;
+  white-space: nowrap;
+  color: #fff;
+  text-shadow: 0 2px 0 #000, 0 0 12px rgba(0, 0, 0, 0.8);
+  animation: sali 1.6s ease-out forwards;
+  pointer-events: none;
+}
+.popup-danno.critico { color: #ffd24a; font-size: 36px; }
+.popup-danno.mancato, .popup-danno.fallimento, .popup-danno.senza_energia { color: #c9c4d9; font-size: 22px; }
+.popup-danno.riuscito { color: #6cf0a4; }
+@keyframes sali {
+  0% { transform: translateY(10px) scale(0.6); opacity: 0; }
+  15% { transform: translateY(0) scale(1.15); opacity: 1; }
+  30% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-36px); opacity: 0; }
+}
+
+.scena-clou {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  animation: entra 0.35s ease-out;
+}
+@keyframes entra { from { opacity: 0; } to { opacity: 1; } }
+.scena-clou .didascalia {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 32px));
+  background: rgba(10, 8, 16, 0.82);
+  border: 1px solid var(--bordo);
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 1.05rem;
+}
+.scena-clou .salta { position: absolute; top: 16px; right: 16px; }
+.scena-clou .marchio { position: absolute; top: 18px; left: 16px; letter-spacing: 0.2em; color: var(--testo-tenue); font-size: 0.8rem; }
+
+.diario { display: grid; gap: 10px; }
+.voce { padding: 10px 12px; border-radius: 10px; background: #13111c; border: 1px solid var(--bordo); }
+.voce.giocatore { border-left: 3px solid var(--accento); }
+.voce.gm { border-left: 3px solid var(--accento-2); }
+.voce.nemico { border-left: 3px solid var(--pericolo); }
+.voce .tiri { font-family: ui-monospace, Menlo, monospace; font-size: 0.75rem; color: var(--testo-tenue); margin-top: 4px; }
