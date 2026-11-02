@@ -27,15 +27,16 @@ quella al posto del segnaposto, senza toccare altro.
 
 ## Regole di stile: lo "Stile Varco"
 
-Un cartone d'avventura nostalgico, nostro: la morbidezza dei cartoni surreali di oggi incontra l'energia dei
-manga d'avventura anni '80 e '90.
+Il tono è quello dei manga e degli anime d'azione di fine anni '80 e primi '90: serio, epico, nostalgico.
+Niente aria da cartone per bambini.
 
-- **Personaggi:** testa grande e tonda, occhioni con doppio riflesso, sopracciglia decise, guance rosate,
-  capelli a ciuffi grossi e appuntiti, arti morbidi "a tubo" senza gomiti, mani tonde, scarponi grandi.
-- **Contorni:** scuri e spessi, uguali dappertutto. Colori piatti con una sola tinta d'ombra e un riflesso chiaro.
-- **Ambienti:** colline tonde, nuvole soffici a bolle, rovine e tecnologia arrotondate (cupole, capsule, antenne
-  con la pallina), una leggera grana calda e una vignetta morbida per l'effetto "vecchia videocassetta".
-- **Palette per universo:** Fantasy medievale con cielo azzurro che sfuma in pesca, prati verde menta, tetti corallo;
-  Post-apocalisse con tramonto arancio-rosa, sole a strisce, rovine lilla e azzurro polvere.
+- **Personaggi:** proporzioni adulte (circa sette teste), spalle e muscoli leggibili, occhi stretti e taglienti,
+  sopracciglia corrucciate, capelli a ciocche affilate, pose d'azione con il peso sulla gamba avanti.
+- **Inchiostro e colore:** contorni scuri decisi, colori piatti con un'ombra netta (la luce arriva da destra in alto),
+  qualche lama di luce sui bordi. Palette calda e un po' smorzata.
+- **Ambienti:** luce drammatica di fine giornata, profondità a strati che si velano con la distanza, raggi di luce,
+  polvere sospesa e vignetta. Contorni più sottili dei personaggi, così i cartoncini restano in primo piano.
+- **Palette per universo:** Fantasy medievale con crepuscolo viola e cremisi, pietra calda e torce;
+  Post-apocalisse con cielo color ruggine, foschia di polvere e palazzi sventrati.
 - **Nei prompt** si descrivono i tratti, non si nominano autori, opere o personaggi esistenti.
 - Personaggi originali: ispirati a generi e stereotipi, mai copie di personaggi di giochi o anime esistenti.

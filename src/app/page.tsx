@@ -5,7 +5,7 @@ export default function Home() {
     <main className="contenitore">
       <h1 style={{ fontSize: "2.5rem", letterSpacing: "0.2em" }}>VARCO</h1>
       <p className="tenue">
-        Gioco di ruolo testuale a turni nel multiverso. Si gioca scrivendo; i momenti clou diventano scene a cartoncini in Stile Varco, un cartone d'avventura nostalgico.
+        Gioco di ruolo testuale a turni nel multiverso. Si gioca scrivendo; i momenti clou diventano scene a cartoncini in stile anime d'azione anni '90.
       </p>
       <div className="griglia-2" style={{ marginTop: 24 }}>
         <Link href="/crea" className="pannello" style={{ textDecoration: "none", color: "inherit" }}>

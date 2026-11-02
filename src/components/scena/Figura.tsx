@@ -3,289 +3,445 @@ import type { Essenza } from "@/lib/personaggio/essenza";
 import { CONTORNO, scurisci, schiarisci } from "./colori";
 
 /**
- * Figura segnaposto in "Stile Varco", disegnata in SVG a partire dall'Essenza:
- * testa grande e tonda, occhioni espressivi, capelli a ciuffi appuntiti, arti morbidi "a tubo",
- * scarponi tondi e contorni spessi, come un vecchio cartone d'avventura.
+ * Figura segnaposto disegnata in SVG a partire dall'Essenza, nello stile dei manga d'azione anni '80 e '90:
+ * proporzioni adulte (circa sette teste), muscoli leggibili, sguardo tagliente, inchiostro deciso e
+ * ombre nette a due toni con la luce che arriva da destra in alto.
  * È sempre in posa di combattimento, rivolta a destra, coi piedi nell'origine (0,0) e alta circa 480 unità.
  * Quando un personaggio avrà la sua illustrazione definitiva, `Cartoncino` userà quella al posto di questa.
  */
 
-const LARGHEZZA: Record<Essenza["corporatura"], number> = { esile: 0.86, media: 1, robusta: 1.16, imponente: 1.32 };
-const METALLO = "#9aa3b0";
-const GUANCE = "#ff8f8f";
-const T = 5; // spessore del contorno
+type P = [number, number];
 
-const tratto = { stroke: CONTORNO, strokeWidth: T, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
+const LARGHEZZA: Record<Essenza["corporatura"], number> = { esile: 0.84, media: 1, robusta: 1.18, imponente: 1.36 };
+const METALLO = "#a3abb8";
+const INCHIOSTRO = 3.5;
+const LUCE: P = [0.55, -0.83];
 
-/** Arto morbido: una curva con contorno, senza gomiti né ginocchia. */
-function Tubo({ d, spessore, colore }: { d: string; spessore: number; colore: string }) {
+const tratto = { stroke: CONTORNO, strokeWidth: INCHIOSTRO, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
+
+// ——— geometria dei segmenti muscolosi ———
+
+const pt = ([x, y]: P) => `${x.toFixed(1)},${y.toFixed(1)}`;
+
+/**
+ * Un segmento del corpo tra a e b: raggi diversi alle due estremità, rigonfiamento a metà (il muscolo)
+ * e punte arrotondate. r1/r2 sono i raggi dal lato dell'ombra e dal lato della luce.
+ */
+function segmento(a: P, b: P, r1a: number, r1b: number, r2a: number, r2b: number, g1: number, g2: number): string {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const l = Math.hypot(dx, dy) || 1;
+  const d: P = [dx / l, dy / l];
+  let n: P = [-d[1], d[0]];
+  if (n[0] * LUCE[0] + n[1] * LUCE[1] > 0) n = [-n[0], -n[1]];
+  const su = (p: P, v: P, k: number): P => [p[0] + v[0] * k, p[1] + v[1] * k];
+  const m: P = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const A1 = su(a, n, r1a);
+  const B1 = su(b, n, r1b);
+  const B2 = su(b, n, -r2b);
+  const A2 = su(a, n, -r2a);
+  const C1 = su(m, n, (r1a + r1b) / 2 + g1);
+  const C2 = su(m, n, -((r2a + r2b) / 2 + g2));
+  const capB = su(su(b, d, ((r1b + r2b) / 2) * 1.6), n, (r1b - r2b) / 2);
+  const capA = su(su(a, d, -((r1a + r2a) / 2) * 1.6), n, (r1a - r2a) / 2);
+  return `M ${pt(A1)} Q ${pt(C1)} ${pt(B1)} Q ${pt(capB)} ${pt(B2)} Q ${pt(C2)} ${pt(A2)} Q ${pt(capA)} ${pt(A1)} Z`;
+}
+
+/** Segmento con colore pieno, ombra netta sul lato lontano dalla luce e contorno a inchiostro. */
+function Parte({ a, b, ra, rb, g = 0, colore, ombra = 0.72 }: { a: P; b: P; ra: number; rb: number; g?: number; colore: string; ombra?: number }) {
+  const pieno = segmento(a, b, ra, rb, ra, rb, g, g * 0.6);
   return (
     <>
-      <path d={d} fill="none" stroke={CONTORNO} strokeWidth={spessore + T * 2} strokeLinecap="round" />
-      <path d={d} fill="none" stroke={colore} strokeWidth={spessore} strokeLinecap="round" />
+      <path d={pieno} fill={colore} />
+      <path d={segmento(a, b, ra, rb, -ra * 0.15, -rb * 0.15, g, 0)} fill={scurisci(colore, ombra)} />
+      <path d={pieno} fill="none" {...tratto} />
     </>
   );
 }
 
-/** Scarpone tondo con un riflesso. */
-function Scarpone({ x, colore }: { x: number; colore: string }) {
+/** Forma libera a due toni: base, ombra e contorno. */
+function Forma({ d, ombra, colore, f = 0.72 }: { d: string; ombra?: string; colore: string; f?: number }) {
   return (
-    <g>
-      <path d={`M ${x - 30},-2 Q ${x - 32},-34 ${x},-34 Q ${x + 40},-32 ${x + 42},-2 Z`} fill={colore} {...tratto} />
-      <path d={`M ${x - 12},-24 Q ${x + 2},-30 ${x + 16},-26`} stroke={schiarisci(colore, 0.45)} strokeWidth={5} fill="none" strokeLinecap="round" />
-    </g>
+    <>
+      <path d={d} fill={colore} />
+      {ombra && <path d={ombra} fill={scurisci(colore, f)} />}
+      <path d={d} fill="none" {...tratto} />
+    </>
   );
 }
 
-// testa
-const TX = 14;
-const TY = -350;
-const TR = 66;
+// ——— scheletro della posa (piedi in 0,0) ———
+
+const TESTA: P = [24, -428];
+const COLLO_BASSO: P = [12, -372];
 
 export function Figura({ essenza }: { essenza: Essenza }) {
   const uid = useId().replace(/:/g, "");
   const w = LARGHEZZA[essenza.corporatura];
-  const s = essenza.altezza * (essenza.corporatura === "imponente" ? 1.06 : 1);
+  const s = essenza.altezza * (essenza.corporatura === "imponente" ? 1.05 : 1);
   const { primario, secondario, accento } = essenza.palette;
   const pelle = essenza.pelle;
-  const capelli = essenza.capelli.colore;
-  const stile = essenza.capelli.stile;
   const segno = essenza.segnoDistintivo.tipo;
   const arma = essenza.arma.tipo;
-  const elmo = stile === "elmo";
-  const occhioLuce = segno === "occhio_luminoso";
   const meccanico = segno === "braccio_meccanico";
   const sfocatura = `sf-${uid}`;
-  const scarpe = scurisci(secondario, 0.5);
+  const stivali = scurisci(secondario, 0.42);
+  const corazzato = arma === "spada" || arma === "scudo";
 
-  // mani: quella davanti regge l'arma, quella dietro sta in guardia
-  const manoDx: [number, number] = [112, -262];
-  const manoSx: [number, number] = [-2, -206];
+  // spalle, anche, ginocchia e mani
+  const spallaD: P = [42 * w, -362];
+  const spallaS: P = [-30 * w, -360];
+  const gomitoD: P = [92 + 6 * w, -332];
+  const manoD: P = [142 + 4 * w, -352];
+  const gomitoS: P = [-62 * w - 10, -300];
+  const manoS: P = [-46 * w, -258];
+  const ancaD: P = [20 * w, -238];
+  const ancaS: P = [-18 * w, -236];
+  const ginD: P = [76, -144];
+  const ginS: P = [-52, -136];
+  const cavD: P = [66, -38];
+  const cavS: P = [-102, -36];
 
   return (
     <g transform={`scale(${s})`}>
       <defs>
         <filter id={sfocatura} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="14" />
+          <feGaussianBlur stdDeviation="12" />
         </filter>
       </defs>
 
       {/* dietro al corpo */}
-      {segno === "aura" && <ellipse cx={0} cy={-230} rx={160 * w} ry={260} fill={accento} opacity={0.35} filter={`url(#${sfocatura})`} />}
+      {segno === "aura" && <Aura colore={accento} w={w} sfocatura={sfocatura} />}
       {segno === "ali" && (
-        <g transform="translate(0 50)" opacity={0.9}>
-          <path d="M -20,-320 Q -120,-470 -200,-470 Q -170,-430 -200,-410 Q -160,-390 -190,-360 Q -130,-350 -150,-320 Q -80,-320 -36,-288 Z" fill={accento} {...tratto} />
-          <path d="M -14,-312 Q -80,-420 -130,-428 Q -110,-390 -130,-372 Q -90,-350 -30,-300 Z" fill={schiarisci(accento)} />
+        <g>
+          <Forma
+            colore={scurisci(accento, 0.55)}
+            d="M -10,-350 L -120,-470 L -250,-500 L -200,-440 L -260,-420 L -196,-380 L -246,-340 L -170,-320 L -190,-280 L -60,-300 Z"
+            ombra="M -10,-350 L -120,-470 L -160,-420 L -120,-330 L -60,-300 Z"
+          />
+          <path d="M -40,-330 L -120,-470 M -60,-320 L -200,-440 M -70,-310 L -196,-380 M -64,-302 L -170,-320" stroke={CONTORNO} strokeWidth={2.5} />
         </g>
       )}
       {segno === "mantello" && (
-        <g>
-          <path d={`M ${-40 * w},-282 Q -120,-200 -150,-20 Q -120,-4 -100,-26 Q -80,-2 -56,-30 Q -40,-150 ${26 * w},-282 Z`} fill={secondario} {...tratto} />
-          <path d={`M ${-40 * w},-282 Q -120,-200 -150,-20 Q -120,-4 -100,-26 Q -86,-170 ${-10 * w},-280 Z`} fill={scurisci(secondario)} />
+        <Forma
+          colore={secondario}
+          d={`M ${-34 * w},-372 Q -110,-300 -170,-110 L -150,-96 L -138,-60 L -112,-80 L -96,-34 L -76,-70 L -50,-54 Q -40,-220 ${30 * w},-370 Z`}
+          ombra={`M ${-34 * w},-372 Q -110,-300 -170,-110 L -150,-96 L -138,-60 L -112,-80 Q -96,-230 ${-6 * w},-368 Z`}
+        />
+      )}
+      {essenza.capelli.stile === "lunghi" && (
+        <g transform={`translate(${TESTA[0]} ${TESTA[1]}) rotate(-4)`}>
+          <Forma
+            colore={essenza.capelli.colore}
+            d="M -26,-24 Q -48,10 -46,60 L -36,52 L -32,78 L -20,58 L -12,70 L -8,30 Q -6,10 -2,0 Z"
+            ombra="M -26,-24 Q -48,10 -46,60 L -36,52 L -32,78 L -24,40 Q -22,10 -14,-10 Z"
+          />
         </g>
       )}
-      <CapelliDietro stile={stile} colore={capelli} primario={primario} />
 
-      {/* braccio dietro */}
-      <Tubo d={`M ${-30 * w},-268 Q -70,-200 ${manoSx[0]},${manoSx[1]}`} spessore={22 * w} colore={meccanico ? METALLO : scurisci(primario)} />
+      {/* braccio dietro, col pugno caricato al fianco */}
+      <Parte a={spallaS} b={gomitoS} ra={15 * w} rb={11 * w} g={4 * w} colore={meccanico ? METALLO : scurisci(primario, 0.85)} />
+      <Parte a={gomitoS} b={manoS} ra={11 * w} rb={9 * w} g={3 * w} colore={meccanico ? METALLO : scurisci(pelle, 0.92)} />
       {meccanico && (
-        <>
-          <circle cx={-44} cy={-226} r={8} fill={accento} stroke={CONTORNO} strokeWidth={3} />
-          <path d="M -38,-258 Q -48,-246 -50,-236" stroke={schiarisci(METALLO, 0.5)} strokeWidth={4} fill="none" strokeLinecap="round" />
-        </>
+        <g>
+          <circle cx={gomitoS[0]} cy={gomitoS[1]} r={8} fill={scurisci(METALLO, 0.6)} {...tratto} strokeWidth={2.5} />
+          <circle cx={gomitoS[0]} cy={gomitoS[1]} r={3} fill={accento} />
+          <path d={`M ${spallaS[0] - 8},${spallaS[1] + 18} L ${gomitoS[0] + 6},${gomitoS[1] - 16} M ${gomitoS[0] + 6},${gomitoS[1] + 14} L ${manoS[0] - 4},${manoS[1] - 14}`} stroke={CONTORNO} strokeWidth={2} />
+          <path d={`M ${spallaS[0] + 4},${spallaS[1] + 14} L ${gomitoS[0] + 14},${gomitoS[1] - 10}`} stroke={accento} strokeWidth={2} opacity={0.9} />
+        </g>
       )}
-      <circle cx={manoSx[0]} cy={manoSx[1]} r={arma === "pugni" ? 22 : 15} fill={arma === "pugni" ? accento : meccanico ? METALLO : pelle} {...tratto} />
+      <Pugno c={manoS} r={13 * w} colore={arma === "pugni" ? accento : meccanico ? METALLO : pelle} />
 
-      {/* gamba dietro */}
-      <Tubo d={`M ${-14 * w},-170 Q ${-52 * w},-100 ${-50 * w},-26`} spessore={28 * w} colore={scurisci(secondario)} />
-      <Scarpone x={-56 * w} colore={scurisci(scarpe, 0.8)} />
+      {/* gamba dietro, tesa */}
+      <Parte a={ancaS} b={ginS} ra={22 * w} rb={15 * w} g={6 * w} colore={scurisci(secondario, 0.85)} />
+      <Parte a={ginS} b={cavS} ra={15 * w} rb={10 * w} g={5 * w} colore={scurisci(secondario, 0.85)} />
+      <Stivale caviglia={cavS} punta={[-62, -4]} w={w} colore={scurisci(stivali, 0.85)} />
 
-      {/* busto a fagiolo */}
-      <path
-        d={`M ${-40 * w},-288 Q 0,-300 ${40 * w},-288 Q ${54 * w},-220 ${36 * w},-160 Q 0,-148 ${-36 * w},-160 Q ${-54 * w},-220 ${-40 * w},-288 Z`}
-        fill={primario}
-      />
-      <path d={`M ${-40 * w},-288 Q ${-8 * w},-296 ${-6 * w},-292 Q ${-16 * w},-220 ${-10 * w},-152 Q ${-26 * w},-154 ${-36 * w},-160 Q ${-54 * w},-220 ${-40 * w},-288 Z`} fill={scurisci(primario)} />
-      <path
-        d={`M ${-40 * w},-288 Q 0,-300 ${40 * w},-288 Q ${54 * w},-220 ${36 * w},-160 Q 0,-148 ${-36 * w},-160 Q ${-54 * w},-220 ${-40 * w},-288 Z`}
-        fill="none"
-        {...tratto}
-      />
-      <path d={`M ${16 * w},-270 Q ${30 * w},-250 ${32 * w},-226`} stroke={schiarisci(primario, 0.4)} strokeWidth={6} fill="none" strokeLinecap="round" />
-      <path d={`M ${-44 * w},-188 Q 0,-196 ${44 * w},-188 L ${40 * w},-166 Q 0,-158 ${-40 * w},-166 Z`} fill={secondario} {...tratto} />
-      <circle cx={6} cy={-178} r={9} fill={accento} stroke={CONTORNO} strokeWidth={3} />
+      {/* busto */}
+      <Busto w={w} primario={primario} secondario={secondario} accento={accento} pelle={pelle} corazzato={corazzato} />
 
-      {/* scudo, tenuto dal braccio dietro ma davanti al busto */}
+      {arma === "scudo" && (
+        <Forma
+          colore={secondario}
+          d="M 40,-352 L 108,-352 Q 114,-292 74,-236 Q 34,-292 40,-352 Z"
+          ombra="M 40,-352 L 72,-352 L 74,-236 Q 34,-292 40,-352 Z"
+        />
+      )}
       {arma === "scudo" && (
         <g>
-          <ellipse cx={36} cy={-228} rx={50} ry={66} fill={secondario} {...tratto} strokeWidth={6} />
-          <ellipse cx={32} cy={-228} rx={34} ry={50} fill={scurisci(secondario)} />
-          <circle cx={36} cy={-228} r={15} fill={accento} {...tratto} />
-          <path d="M 4,-268 Q 14,-284 30,-288" stroke={schiarisci(secondario, 0.5)} strokeWidth={6} fill="none" strokeLinecap="round" />
+          <path d="M 74,-340 L 74,-256 M 52,-318 L 96,-318" stroke={accento} strokeWidth={6} strokeLinecap="round" />
+          <path d="M 100,-346 Q 104,-306 90,-276" stroke={schiarisci(secondario, 0.5)} strokeWidth={3} fill="none" strokeLinecap="round" />
         </g>
       )}
 
-      {/* gamba davanti */}
-      <Tubo d={`M ${16 * w},-170 Q ${64 * w},-110 ${50 * w},-26`} spessore={28 * w} colore={secondario} />
-      <Scarpone x={58 * w} colore={scarpe} />
+      {/* gamba davanti, piegata */}
+      <Parte a={ancaD} b={ginD} ra={23 * w} rb={16 * w} g={7 * w} colore={secondario} />
+      <Parte a={ginD} b={cavD} ra={16 * w} rb={10 * w} g={6 * w} colore={secondario} />
+      <path d={`M ${ancaD[0] + 6},${ancaD[1] + 26} Q ${ginD[0] - 4},${ginD[1] - 40} ${ginD[0] + 6},${ginD[1] - 8}`} stroke={scurisci(secondario, 0.6)} strokeWidth={2.5} fill="none" strokeLinecap="round" />
+      <Stivale caviglia={cavD} punta={[102, -4]} w={w} colore={stivali} />
 
-      {/* testa grande */}
-      <ellipse cx={-10} cy={-342} rx={11} ry={15} fill={pelle} {...tratto} />
-      <circle cx={TX} cy={TY} r={TR} fill={pelle} {...tratto} />
-      <path d={`M ${TX - TR + 4},-338 Q ${TX - 40},-290 ${TX + 8},-285 Q ${TX - 30},-300 ${TX - TR + 4},-338 Z`} fill={scurisci(pelle, 0.86)} />
-      {!elmo && <Volto pelle={pelle} accento={accento} luce={occhioLuce} sfocatura={sfocatura} />}
-      {segno === "cicatrice" && <path d="M 44,-382 L 66,-330" stroke="#a13a3a" strokeWidth={4} strokeLinecap="round" />}
-      <Capelli stile={stile} colore={capelli} primario={primario} accento={accento} sfocatura={sfocatura} />
-      {segno === "corna" && (
-        <g fill="#f4e8c8" {...tratto}>
-          <path d="M -22,-396 Q -54,-420 -48,-468 Q -30,-436 -4,-414 Z" />
-          <path d="M 46,-412 Q 62,-440 56,-484 Q 82,-450 66,-400 Z" />
-        </g>
-      )}
+      {/* collo e testa */}
+      <Parte a={COLLO_BASSO} b={[20, -398]} ra={11 * w} rb={10} colore={pelle} />
+      <Testa essenza={essenza} sfocatura={sfocatura} />
 
       {/* braccio davanti con l'arma */}
-      <g transform="translate(-2 38)">
-        {arma === "bastone" && (
-          <g>
-            <Tubo d="M 96,-186 L 140,-476" spessore={11} colore="#7a5532" />
-            <circle cx={142} cy={-492} r={32} fill={accento} opacity={0.55} filter={`url(#${sfocatura})`} />
-            <circle cx={142} cy={-492} r={18} fill={accento} {...tratto} />
-            <circle cx={136} cy={-498} r={5} fill="#fff" opacity={0.8} />
-          </g>
-        )}
-        {arma === "arco" && (
-          <g>
-            <path d="M 124,-430 Q 196,-300 124,-170" fill="none" stroke={CONTORNO} strokeWidth={18} strokeLinecap="round" />
-            <path d="M 124,-430 Q 196,-300 124,-170" fill="none" stroke="#8a5d34" strokeWidth={9} strokeLinecap="round" />
-            <line x1={124} y1={-430} x2={124} y2={-170} stroke="#f0e8d8" strokeWidth={2.5} />
-            <line x1={70} y1={-300} x2={205} y2={-300} stroke={CONTORNO} strokeWidth={6} strokeLinecap="round" />
-            <path d="M 204,-310 Q 226,-300 204,-290 Z" fill={accento} {...tratto} strokeWidth={3} />
-          </g>
-        )}
-      </g>
-      <Tubo d={`M ${30 * w},-270 Q 84,-214 ${manoDx[0]},${manoDx[1]}`} spessore={22 * w} colore={primario} />
-      <g transform="translate(-2 38)">
-        {arma === "spada" && (
-          <g>
-            <path d="M 122,-308 L 236,-418 Q 258,-436 250,-412 L 136,-294 Z" fill="#eef3f8" {...tratto} />
-            <path d="M 132,-312 L 238,-414" stroke={accento} strokeWidth={4} strokeLinecap="round" opacity={0.9} />
-            <Tubo d="M 104,-324 L 140,-288" spessore={10} colore={secondario} />
-            <circle cx={104} cy={-324} r={7} fill={accento} stroke={CONTORNO} strokeWidth={3} />
-          </g>
-        )}
-        {arma === "pistola" && (
-          <g {...tratto}>
-            <rect x={104} y={-326} width={66} height={24} rx={11} fill="#4a4a58" />
-            <rect x={108} y={-314} width={20} height={34} rx={9} fill="#34343f" />
-            <circle cx={176} cy={-314} r={7} fill={accento} />
-            <path d="M 118,-318 L 156,-318" stroke="#8d8da0" strokeWidth={4} />
-          </g>
-        )}
-      </g>
-      <circle cx={manoDx[0]} cy={manoDx[1]} r={arma === "pugni" ? 24 : 16} fill={arma === "pugni" ? accento : pelle} {...tratto} />
-      {arma === "pugni" && <path d={`M ${manoDx[0] - 8},${manoDx[1] - 14} Q ${manoDx[0] + 4},${manoDx[1] - 18} ${manoDx[0] + 12},${manoDx[1] - 10}`} stroke="#fff" strokeWidth={4} fill="none" strokeLinecap="round" opacity={0.7} />}
+      {arma === "bastone" && <Bastone mano={manoD} accento={accento} sfocatura={sfocatura} />}
+      {arma === "arco" && <Arco mano={manoD} accento={accento} />}
+      <Parte a={spallaD} b={gomitoD} ra={16 * w} rb={11 * w} g={5 * w} colore={primario} />
+      <Parte a={gomitoD} b={manoD} ra={12 * w} rb={9 * w} g={4 * w} colore={arma === "pugni" ? pelle : scurisci(pelle, 0.97)} />
+      {corazzato && (
+        <Forma
+          colore={METALLO}
+          d={`M ${spallaD[0] - 22 * w},${spallaD[1] - 4} Q ${spallaD[0] + 4},${spallaD[1] - 28 * w} ${spallaD[0] + 30 * w},${spallaD[1] - 2} Q ${spallaD[0] + 26 * w},${spallaD[1] + 22} ${spallaD[0] + 14},${spallaD[1] + 26} Q ${spallaD[0] - 4},${spallaD[1] + 6} ${spallaD[0] - 22 * w},${spallaD[1] - 4} Z`}
+          ombra={`M ${spallaD[0] - 22 * w},${spallaD[1] - 4} Q ${spallaD[0] - 4},${spallaD[1] - 10} ${spallaD[0] + 14},${spallaD[1] + 26} Q ${spallaD[0] - 4},${spallaD[1] + 6} ${spallaD[0] - 22 * w},${spallaD[1] - 4} Z`}
+        />
+      )}
+      {arma === "spada" && <Spada mano={manoD} accento={accento} secondario={secondario} />}
+      {arma === "pistola" && <Pistola mano={manoD} accento={accento} />}
+      <Pugno c={manoD} r={13 * w} colore={arma === "pugni" ? accento : pelle} guanto={arma === "pugni"} />
     </g>
   );
 }
 
-/** Occhioni con doppio riflesso, sopracciglia decise, guance rosate e un sorriso sfrontato. */
-function Volto({ pelle, accento, luce, sfocatura }: { pelle: string; accento: string; luce: boolean; sfocatura: string }) {
-  const iride = luce ? accento : "#2a3150";
+// ——— parti ———
+
+function Pugno({ c, r, colore, guanto = false }: { c: P; r: number; colore: string; guanto?: boolean }) {
+  const [x, y] = c;
+  const rr = guanto ? r * 1.35 : r;
+  const d = `M ${x - rr},${y - rr * 0.7} Q ${x - rr * 0.2},${y - rr * 1.15} ${x + rr},${y - rr * 0.8} Q ${x + rr * 1.3},${y} ${x + rr * 0.9},${y + rr * 0.8} Q ${x},${y + rr * 1.2} ${x - rr},${y + rr * 0.6} Z`;
   return (
     <g>
-      <ellipse cx={58} cy={-318} rx={11} ry={6} fill={GUANCE} opacity={0.45} />
-      <ellipse cx={22} cy={-352} rx={9} ry={16} fill="#fff" stroke={CONTORNO} strokeWidth={3.5} />
-      <ellipse cx={25} cy={-349} rx={6} ry={11} fill={iride} />
-      <ellipse cx={52} cy={-352} rx={14} ry={21} fill="#fff" stroke={CONTORNO} strokeWidth={4} />
-      <ellipse cx={56} cy={-348} rx={10} ry={16} fill={iride} />
-      <circle cx={56} cy={-347} r={5} fill={luce ? "#fff" : "#10131f"} opacity={luce ? 0.6 : 1} />
-      {luce && <circle cx={56} cy={-348} r={22} fill={accento} opacity={0.55} filter={`url(#${sfocatura})`} />}
-      <circle cx={60} cy={-356} r={4.5} fill="#fff" />
-      <circle cx={52} cy={-340} r={2} fill="#fff" />
-      <circle cx={27} cy={-355} r={3} fill="#fff" />
-      <path d="M 10,-378 Q 22,-386 32,-380" stroke={CONTORNO} strokeWidth={6} fill="none" strokeLinecap="round" />
-      <path d="M 40,-382 Q 56,-388 70,-376" stroke={CONTORNO} strokeWidth={7} fill="none" strokeLinecap="round" />
-      <path d="M 74,-336 Q 80,-332 76,-326" stroke={scurisci(pelle, 0.6)} strokeWidth={3} fill="none" strokeLinecap="round" />
-      <path d="M 46,-310 Q 60,-300 74,-314" stroke={CONTORNO} strokeWidth={4.5} fill="none" strokeLinecap="round" />
-      <path d="M 70,-318 L 76,-310" stroke={CONTORNO} strokeWidth={3.5} strokeLinecap="round" />
+      <Forma colore={colore} d={d} ombra={`M ${x - rr},${y - rr * 0.7} Q ${x - rr * 0.6},${y} ${x - rr * 0.2},${y + rr * 1.0} Q ${x - rr * 0.8},${y + rr * 0.9} ${x - rr},${y + rr * 0.6} Z`} />
+      <path d={`M ${x + rr * 0.2},${y - rr * 0.9} L ${x + rr * 0.3},${y + rr * 0.2} M ${x + rr * 0.65},${y - rr * 0.75} L ${x + rr * 0.7},${y + rr * 0.3}`} stroke={CONTORNO} strokeWidth={2} />
+      {guanto && <path d={`M ${x - rr * 0.9},${y - rr * 0.2} L ${x + rr},${y - rr * 0.35}`} stroke={schiarisci(colore, 0.5)} strokeWidth={3} strokeLinecap="round" />}
     </g>
   );
 }
 
-/** Le parti della capigliatura che stanno dietro la testa e il busto. */
-function CapelliDietro({ stile, colore, primario }: { stile: Essenza["capelli"]["stile"]; colore: string; primario: string }) {
-  if (stile === "lunghi") {
-    return (
-      <path
-        d="M -30,-400 Q -80,-360 -78,-280 Q -84,-230 -60,-206 Q -50,-230 -40,-214 Q -34,-236 -22,-222 Q -24,-300 0,-340 Z"
-        fill={scurisci(colore, 0.85)}
-        {...tratto}
+function Stivale({ caviglia, punta, w, colore }: { caviglia: P; punta: P; w: number; colore: string }) {
+  const [cx, cy] = caviglia;
+  const avanti = punta[0] > cx;
+  const tallone = avanti ? cx - 17 * w : cx + 14 * w;
+  const d = avanti
+    ? `M ${cx - 13 * w},${cy - 38} L ${cx + 13 * w},${cy - 30} L ${cx + 14 * w},${cy - 8} Q ${punta[0] - 6},${cy} ${punta[0]},${punta[1] - 6} L ${punta[0] + 2},${punta[1] + 4} L ${tallone},${punta[1] + 4} L ${tallone},${cy - 6} Z`
+    : `M ${cx - 14 * w},${cy - 38} L ${cx + 13 * w},${cy - 30} L ${cx + 16 * w},${cy - 4} Q ${punta[0] - 6},${cy + 4} ${punta[0]},${punta[1] - 4} L ${punta[0] + 2},${punta[1] + 4} L ${cx - 18 * w},${punta[1] + 4} L ${cx - 15 * w},${cy - 8} Z`;
+  return (
+    <g>
+      <Forma colore={colore} d={d} ombra={`M ${cx - 13 * w},${cy - 38} L ${cx - 4 * w},${cy - 39} L ${cx - 2 * w},${punta[1] + 4} L ${avanti ? tallone : cx - 18 * w},${punta[1] + 4} Z`} />
+      <path d={`M ${cx - 13 * w},${cy - 30} L ${cx + 17 * w},${cy - 32}`} stroke={CONTORNO} strokeWidth={2.5} />
+      <path d={`M ${cx + 6 * w},${cy - 26} L ${cx + 10 * w},${cy - 14}`} stroke={schiarisci(colore, 0.35)} strokeWidth={3} strokeLinecap="round" />
+    </g>
+  );
+}
+
+function Busto({ w, primario, secondario, accento, pelle, corazzato }: { w: number; primario: string; secondario: string; accento: string; pelle: string; corazzato: boolean }) {
+  const busto = `M ${-34 * w},-372 Q 6,-386 ${46 * w},-374 L ${50 * w},-348 Q ${46 * w},-306 ${26 * w},-276 L ${-22 * w},-274 Q ${-42 * w},-314 ${-42 * w},-350 Z`;
+  const ombra = `M ${-34 * w},-372 Q ${-14 * w},-378 ${-6 * w},-378 Q ${-16 * w},-320 ${-4 * w},-274 L ${-22 * w},-274 Q ${-42 * w},-314 ${-42 * w},-350 Z`;
+  return (
+    <g>
+      {/* bacino */}
+      <Forma
+        colore={scurisci(secondario, 0.92)}
+        d={`M ${-26 * w},-284 L ${30 * w},-286 L ${34 * w},-232 Q ${4 * w},-222 ${-28 * w},-228 Z`}
+        ombra={`M ${-26 * w},-284 L ${-2 * w},-285 L ${-2 * w},-224 Q ${-16 * w},-224 ${-28 * w},-228 Z`}
       />
-    );
-  }
-  if (stile === "cappuccio") {
-    return (
-      <g>
-        <path
-          d={`M ${TX - 84},-300 Q ${TX - 94},-420 ${TX - 40},-436 Q ${TX - 40},-466 ${TX - 16},-460 Q ${TX},-444 ${TX + 6},-440 Q ${TX + 20},-470 ${TX + 44},-454 Q ${TX + 50},-436 ${TX + 50},-430 Q ${TX + 96},-404 ${TX + 88},-320 Q ${TX},-286 ${TX - 84},-300 Z`}
-          fill={primario}
-          {...tratto}
+      <Forma colore={primario} d={busto} ombra={ombra} />
+      {/* scollo a V sulla pelle */}
+      <path d={`M ${-2 * w},-380 L ${14 * w},-344 L ${30 * w},-378 Z`} fill={pelle} {...tratto} strokeWidth={2.5} />
+      <path d={`M ${-2 * w},-380 L ${8 * w},-358 L ${10 * w},-366 Z`} fill={scurisci(pelle)} />
+      {/* pettorali e addome, a inchiostro */}
+      <path d={`M ${-4 * w},-334 Q ${16 * w},-318 ${44 * w},-332`} stroke={CONTORNO} strokeWidth={2.5} fill="none" strokeLinecap="round" />
+      <path d={`M ${16 * w},-318 L ${16 * w},-286 M ${4 * w},-306 Q ${16 * w},-302 ${30 * w},-306 M ${4 * w},-292 Q ${16 * w},-288 ${28 * w},-292`} stroke={scurisci(primario, 0.5)} strokeWidth={2} fill="none" strokeLinecap="round" />
+      <path d={`M ${32 * w},-366 Q ${44 * w},-350 ${42 * w},-336`} stroke={schiarisci(primario, 0.35)} strokeWidth={3.5} fill="none" strokeLinecap="round" />
+      {/* tracolla o cinghie dell'armatura */}
+      <path d={`M ${-30 * w},-366 L ${36 * w},-282`} stroke={CONTORNO} strokeWidth={13} strokeLinecap="round" />
+      <path d={`M ${-30 * w},-366 L ${36 * w},-282`} stroke={corazzato ? METALLO : scurisci(secondario, 0.75)} strokeWidth={8} strokeLinecap="round" />
+      {/* cintura */}
+      <path d={`M ${-26 * w},-284 Q ${4 * w},-292 ${32 * w},-288 L ${32 * w},-270 Q ${4 * w},-274 ${-26 * w},-266 Z`} fill={scurisci(secondario, 0.55)} {...tratto} />
+      <rect x={4 * w} y={-288} width={14} height={18} rx={2} fill={accento} stroke={CONTORNO} strokeWidth={2.5} />
+    </g>
+  );
+}
+
+function Aura({ colore, w, sfocatura }: { colore: string; w: number; sfocatura: string }) {
+  // fiamma di energia con i bordi a lingue, chiara al centro
+  const fiamma = (k: number) =>
+    `M 0,${20 * k} Q ${-120 * w * k},${-40 * k} ${-110 * w * k},${-220 * k} L ${-150 * w * k},${-300 * k} L ${-96 * w * k},${-300 * k} L ${-120 * w * k},${-420 * k} L ${-50 * w * k},${-370 * k} L ${-30 * k},${-520 * k} L ${20 * k},${-400 * k} L ${70 * k},${-540 * k} L ${84 * k},${-390 * k} L ${150 * w * k},${-460 * k} L ${120 * w * k},${-300 * k} L ${170 * w * k},${-300 * k} L ${120 * w * k},${-200 * k} Q ${120 * w * k},${-40 * k} 0,${20 * k} Z`;
+  return (
+    <g>
+      <path d={fiamma(1)} fill={colore} opacity={0.3} filter={`url(#${sfocatura})`} />
+      <path d={fiamma(1)} fill={colore} opacity={0.35} stroke={schiarisci(colore, 0.5)} strokeWidth={3} strokeLinejoin="round" />
+      <path d={fiamma(0.8)} fill="#fff" opacity={0.25} transform="translate(0 -40)" />
+    </g>
+  );
+}
+
+// ——— testa ———
+
+function Testa({ essenza, sfocatura }: { essenza: Essenza; sfocatura: string }) {
+  const { pelle } = essenza;
+  const { accento, primario } = essenza.palette;
+  const stile = essenza.capelli.stile;
+  const capelli = essenza.capelli.colore;
+  const segno = essenza.segnoDistintivo.tipo;
+  const luce = segno === "occhio_luminoso";
+  const iride = luce ? accento : "#1d2233";
+  const viso = "M -28,0 Q -30,-36 2,-37 Q 30,-37 31,-12 L 33,-4 L 39,7 L 33,10 L 33,15 L 29,23 Q 24,32 13,32 L -4,25 Q -22,16 -28,0 Z";
+  return (
+    <g transform={`translate(${TESTA[0]} ${TESTA[1]}) rotate(-4)`}>
+      {stile === "cappuccio" && (
+        <Forma
+          colore={primario}
+          d="M 36,-18 Q 36,-50 2,-52 Q -42,-52 -46,-8 L -52,44 L -16,44 L -2,30 L 22,-16 Z"
+          ombra="M 2,-52 Q -42,-52 -46,-8 L -52,44 L -16,44 Q -30,10 -20,-30 Z"
         />
-        <path d={`M ${TX - 84},-300 Q ${TX - 94},-420 ${TX - 40},-436 Q ${TX - 60},-380 ${TX - 50},-292 Z`} fill={scurisci(primario)} />
-      </g>
-    );
-  }
-  return null;
+      )}
+      <Forma colore={pelle} d={viso} ombra="M -28,0 Q -22,16 -4,25 L 13,32 Q 2,24 -2,12 Q -6,-6 -18,-14 Q -26,-12 -28,0 Z" f={0.8} />
+      {/* orecchio */}
+      <path d="M -6,-8 Q -16,-8 -14,4 Q -12,12 -4,10" fill={scurisci(pelle, 0.85)} {...tratto} strokeWidth={2.5} />
+      {stile !== "elmo" && (
+        <g>
+          {/* occhio lontano, di scorcio */}
+          <path d="M 32,-6 L 37,-7 L 35,-3 Z" fill={iride} stroke={CONTORNO} strokeWidth={1.5} />
+          {/* occhio vicino: taglio stretto e deciso */}
+          <path d="M 11,-7 L 27,-9 L 25,-2 L 14,-1 Z" fill="#fff" stroke={CONTORNO} strokeWidth={1.5} strokeLinejoin="round" />
+          <path d="M 19,-8.5 L 25,-9 L 24,-1.5 L 19,-1.2 Z" fill={iride} />
+          {luce && <circle cx={22} cy={-5} r={12} fill={accento} opacity={0.75} filter={`url(#${sfocatura})`} />}
+          <circle cx={23} cy={-6.5} r={1.4} fill="#fff" />
+          <path d="M 9,-8 L 28,-11" stroke={CONTORNO} strokeWidth={3.5} strokeLinecap="round" />
+          {/* sopracciglio corrucciato */}
+          <path d="M 6,-20 L 30,-13 L 31,-17 L 9,-24 Z" fill={scurisci(capelli, 0.7)} stroke={CONTORNO} strokeWidth={1.5} strokeLinejoin="round" />
+          {/* naso, bocca, zigomo */}
+          <path d="M 33,-4 L 39,7 L 33,9" fill="none" stroke={CONTORNO} strokeWidth={2} strokeLinejoin="round" />
+          <path d="M 22,18 L 31,17" stroke={CONTORNO} strokeWidth={2.5} strokeLinecap="round" />
+          <path d="M 8,6 Q 14,12 20,10" stroke={scurisci(pelle, 0.7)} strokeWidth={2} fill="none" strokeLinecap="round" />
+        </g>
+      )}
+      {segno === "cicatrice" && <path d="M 12,-20 L 26,8" stroke="#7a2424" strokeWidth={3} strokeLinecap="round" />}
+      <Capelli stile={stile} colore={capelli} primario={primario} accento={accento} sfocatura={sfocatura} />
+      {segno === "corna" && (
+        <g>
+          <Forma colore="#e9dcc0" d="M -12,-30 Q -34,-52 -22,-84 Q -18,-60 4,-38 Z" ombra="M -12,-30 Q -34,-52 -22,-84 Q -24,-56 -6,-34 Z" />
+          <Forma colore="#e9dcc0" d="M 18,-36 Q 22,-62 46,-80 Q 34,-58 30,-32 Z" ombra="M 18,-36 Q 22,-62 46,-80 Q 30,-60 24,-34 Z" />
+        </g>
+      )}
+    </g>
+  );
 }
 
 function Capelli({ stile, colore, primario, accento, sfocatura }: { stile: Essenza["capelli"]["stile"]; colore: string; primario: string; accento: string; sfocatura: string }) {
-  // ciuffi grossi e appuntiti che scendono in una frangia sopra gli occhi
+  // ciuffi lunghi e affilati spazzati all'indietro, con la frangia sulla fronte
   const ciuffi =
-    "M -56,-326 L -92,-362 L -56,-386 L -84,-432 L -30,-428 L -26,-484 L 14,-440 L 44,-486 L 56,-430 L 98,-438 L 80,-394 L 96,-372 Q 74,-382 68,-386 L 62,-370 L 48,-392 L 32,-372 L 22,-396 L 4,-376 L -6,-394 Q -24,-380 -40,-330 Z";
-  const riflesso = <path d="M -30,-424 Q -6,-440 22,-430 M 30,-436 Q 50,-442 66,-426" stroke={schiarisci(colore, 0.45)} strokeWidth={6} fill="none" strokeLinecap="round" />;
+    "M 31,-12 L 36,-24 L 22,-28 L 34,-46 L 12,-40 L 14,-66 L -6,-44 L -22,-64 L -24,-40 L -48,-50 L -34,-26 L -54,-20 L -32,-10 L -28,6 L -22,-6 L -12,-14 L 0,-20 L 8,-12 L 14,-22 L 20,-14 L 26,-20 Z";
+  const ombraCiuffi = "M -6,-44 L -22,-64 L -24,-40 L -48,-50 L -34,-26 L -54,-20 L -32,-10 L -28,6 L -22,-6 L -12,-14 L -8,-30 Z";
   switch (stile) {
     case "corti":
     case "lunghi":
       return (
         <g>
-          <path d={ciuffi} fill={colore} {...tratto} />
-          <path d="M -56,-326 L -92,-362 L -56,-386 L -84,-432 L -30,-428 Q -40,-380 -40,-330 Z" fill={scurisci(colore, 0.82)} />
-          {riflesso}
+          <Forma colore={colore} d={ciuffi} ombra={ombraCiuffi} />
+          <path d="M 2,-38 L 14,-30 M 18,-36 L 26,-30" stroke={schiarisci(colore, 0.45)} strokeWidth={2.5} strokeLinecap="round" />
         </g>
       );
     case "rasati":
       return (
         <g>
-          <path d={`M ${TX - TR + 6},-356 Q ${TX - TR + 6},-418 ${TX},-418 Q ${TX + TR - 4},-418 ${TX + TR - 2},-376 Q ${TX + 20},-398 ${TX - TR + 6},-356 Z`} fill={colore} opacity={0.9} {...tratto} strokeWidth={4} />
-          <path d={`M ${TX - 30},-406 Q ${TX},-412 ${TX + 26},-404`} stroke={schiarisci(colore, 0.4)} strokeWidth={4} fill="none" strokeLinecap="round" />
+          <path d="M -28,0 Q -30,-36 2,-37 Q 30,-37 31,-14 L 22,-20 Q 6,-26 -8,-20 L -20,-6 Z" fill={colore} opacity={0.88} stroke={CONTORNO} strokeWidth={2.5} strokeLinejoin="round" />
+          <path d="M -20,-24 Q -4,-34 16,-30" stroke={schiarisci(colore, 0.35)} strokeWidth={2} fill="none" strokeLinecap="round" />
         </g>
       );
     case "cresta":
       return (
         <g>
-          <path d={`M ${TX - TR + 6},-356 Q ${TX - TR + 6},-418 ${TX},-418 Q ${TX + TR - 4},-418 ${TX + TR - 2},-376 Q ${TX + 20},-398 ${TX - TR + 6},-356 Z`} fill={scurisci(colore, 0.5)} {...tratto} strokeWidth={4} />
-          <path d="M -34,-404 L -48,-470 L -8,-424 L 6,-500 L 26,-424 L 56,-486 L 58,-414 Q 14,-428 -34,-404 Z" fill={colore} {...tratto} />
-          <path d="M 4,-480 L 12,-436" stroke={schiarisci(colore, 0.45)} strokeWidth={5} strokeLinecap="round" />
+          <path d="M -28,0 Q -30,-36 2,-37 Q 30,-37 31,-14 L 22,-20 Q 6,-26 -8,-20 L -20,-6 Z" fill={scurisci(colore, 0.45)} opacity={0.9} stroke={CONTORNO} strokeWidth={2.5} strokeLinejoin="round" />
+          <Forma colore={colore} d="M -30,-16 L -44,-44 L -22,-42 L -24,-70 L -4,-50 L 6,-78 L 14,-48 L 30,-62 L 24,-30 Q 0,-42 -30,-16 Z" ombra="M -30,-16 L -44,-44 L -22,-42 L -24,-70 L -4,-50 L -6,-36 Z" />
         </g>
       );
     case "cappuccio":
       return (
         <g>
-          <path d={`M ${TX - TR + 2},-350 Q ${TX - TR},-414 ${TX},-416 Q ${TX + TR},-416 ${TX + TR + 4},-372 Q ${TX + 30},-404 ${TX - TR + 2},-350 Z`} fill={primario} {...tratto} />
-          <path d={`M ${TX - 26},-406 Q ${TX},-412 ${TX + 30},-402`} stroke={schiarisci(primario, 0.35)} strokeWidth={5} fill="none" strokeLinecap="round" />
+          {/* la falda del cappuccio getta ombra sugli occhi */}
+          <path d="M -24,-30 Q 4,-30 32,-12 L 34,0 Q 10,-10 -16,-6 Z" fill="#000" opacity={0.38} />
+          <Forma colore={primario} d="M -30,-24 Q 2,-50 38,-22 L 40,-12 Q 8,-34 -22,-12 Z" ombra="M -30,-24 Q -14,-38 2,-40 Q -12,-30 -22,-12 Z" />
         </g>
       );
     case "elmo":
       return (
         <g>
-          <line x1={TX} y1={-414} x2={TX - 6} y2={-452} stroke={CONTORNO} strokeWidth={6} strokeLinecap="round" />
-          <circle cx={TX - 6} cy={-458} r={11} fill={accento} {...tratto} strokeWidth={4} />
-          <path d={`M ${TX - TR - 4},-330 Q ${TX - TR - 6},-424 ${TX},-424 Q ${TX + TR + 8},-424 ${TX + TR + 6},-330 Z`} fill={METALLO} {...tratto} />
-          <path d={`M ${TX - 34},-398 Q ${TX},-414 ${TX + 34},-404`} stroke="#e8ecf2" strokeWidth={7} fill="none" strokeLinecap="round" />
-          <rect x={TX - 6} y={-372} width={TR + 14} height={24} rx={12} fill="#2a2f3e" {...tratto} strokeWidth={4} />
-          <rect x={TX + 10} y={-366} width={TR - 14} height={8} rx={4} fill={accento} />
-          <rect x={TX + 10} y={-366} width={TR - 14} height={8} rx={4} fill={accento} opacity={0.7} filter={`url(#${sfocatura})`} />
+          <Forma
+            colore={METALLO}
+            d="M -32,6 Q -36,-44 2,-44 Q 38,-44 38,-12 L 42,10 L 34,30 L 8,36 L -18,28 Z"
+            ombra="M -32,6 Q -36,-44 2,-44 Q -18,-30 -16,0 L -6,32 L -18,28 Z"
+          />
+          <path d="M 2,-44 Q 18,-20 20,34" stroke={CONTORNO} strokeWidth={2.5} fill="none" />
+          <path d="M 10,-8 L 40,-10 L 40,-2 L 12,0 Z" fill="#14161d" stroke={CONTORNO} strokeWidth={2} />
+          <path d="M 16,-6 L 38,-7" stroke={accento} strokeWidth={2.5} strokeLinecap="round" />
+          <path d="M 16,-6 L 38,-7" stroke={accento} strokeWidth={6} opacity={0.6} filter={`url(#${sfocatura})`} />
+          <path d="M 18,8 L 34,8 M 18,14 L 32,15 M 18,20 L 30,22" stroke={CONTORNO} strokeWidth={2} />
+          <path d="M 10,-38 Q 26,-36 32,-20" stroke="#eef1f5" strokeWidth={3} fill="none" strokeLinecap="round" />
+          {/* cresta dell'elmo */}
+          <path d="M -26,-30 Q -6,-62 26,-44 L 20,-38 Q -4,-50 -20,-24 Z" fill={accento} {...tratto} strokeWidth={2.5} />
         </g>
       );
   }
+}
+
+// ——— armi (ancorate alla mano davanti) ———
+
+function Spada({ mano, accento, secondario }: { mano: P; accento: string; secondario: string }) {
+  const [x, y] = mano;
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <path d="M -10,14 L 4,-2" stroke={CONTORNO} strokeWidth={11} strokeLinecap="round" />
+      <path d="M -10,14 L 4,-2" stroke={scurisci(secondario, 0.6)} strokeWidth={6} strokeLinecap="round" />
+      <circle cx={-14} cy={18} r={6} fill={accento} stroke={CONTORNO} strokeWidth={2.5} />
+      <path d="M 4,-10 L 140,-152 L 152,-170 L 146,-146 L 12,-2 Z" fill="#e9eef4" {...tratto} />
+      <path d="M 8,-6 L 146,-154 L 12,-2 Z" fill="#b9c3cf" />
+      <path d="M 10,-12 L 138,-148" stroke="#ffffff" strokeWidth={2} strokeLinecap="round" />
+      <path d="M -8,-18 L 22,12" stroke={CONTORNO} strokeWidth={12} strokeLinecap="round" />
+      <path d="M -8,-18 L 22,12" stroke={accento} strokeWidth={6} strokeLinecap="round" />
+    </g>
+  );
+}
+
+function Bastone({ mano, accento, sfocatura }: { mano: P; accento: string; sfocatura: string }) {
+  const [x, y] = mano;
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <path d="M -10,160 L 2,40 Q 6,0 2,-60 Q 0,-120 10,-170" stroke={CONTORNO} strokeWidth={14} fill="none" strokeLinecap="round" />
+      <path d="M -10,160 L 2,40 Q 6,0 2,-60 Q 0,-120 10,-170" stroke="#5c3f26" strokeWidth={8} fill="none" strokeLinecap="round" />
+      <path d="M 10,-170 Q 34,-196 22,-222 Q 6,-236 -8,-218 Q 18,-214 14,-190 Z" fill="#5c3f26" {...tratto} strokeWidth={3} />
+      <circle cx={8} cy={-196} r={26} fill={accento} opacity={0.6} filter={`url(#${sfocatura})`} />
+      <path d="M 8,-214 L 18,-196 L 8,-178 L -2,-196 Z" fill={accento} {...tratto} strokeWidth={2.5} />
+      <path d="M 8,-210 L 12,-196" stroke="#fff" strokeWidth={2} strokeLinecap="round" />
+    </g>
+  );
+}
+
+function Arco({ mano, accento }: { mano: P; accento: string }) {
+  const [x, y] = mano;
+  const arco = "M -6,-140 Q 10,-150 20,-120 Q 40,-60 14,0 Q 40,60 20,120 Q 10,150 -6,140";
+  return (
+    <g transform={`translate(${x - 8} ${y})`}>
+      <path d={arco} stroke={CONTORNO} strokeWidth={13} fill="none" strokeLinecap="round" />
+      <path d={arco} stroke="#6e4a2a" strokeWidth={7} fill="none" strokeLinecap="round" />
+      <path d="M -6,-140 L -100,0 L -6,140" stroke="#eae2d2" strokeWidth={1.8} fill="none" />
+      <path d="M -100,0 L 70,0" stroke={CONTORNO} strokeWidth={5} strokeLinecap="round" />
+      <path d="M -100,0 L 70,0" stroke="#c9b38e" strokeWidth={2} strokeLinecap="round" />
+      <path d="M 70,-6 L 88,0 L 70,6 Z" fill={METALLO} stroke={CONTORNO} strokeWidth={2} />
+      <path d="M -100,0 L -90,-8 L -80,0 L -90,8 Z" fill={accento} stroke={CONTORNO} strokeWidth={1.5} />
+    </g>
+  );
+}
+
+function Pistola({ mano, accento }: { mano: P; accento: string }) {
+  const [x, y] = mano;
+  return (
+    <g transform={`translate(${x} ${y})`} {...tratto} strokeWidth={2.5}>
+      <path d="M -6,-14 L 62,-14 L 62,-2 L 14,-2 L 10,16 L -6,16 Z" fill="#3b3c45" />
+      <path d="M 0,-20 L 54,-20 L 54,-14 L 0,-14 Z" fill="#555766" />
+      <path d="M 4,-12 L 52,-12" stroke="#7d8090" strokeWidth={2} />
+      <circle cx={60} cy={-8} r={3} fill={accento} stroke="none" />
+    </g>
+  );
 }
