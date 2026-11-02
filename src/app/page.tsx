@@ -9,8 +9,8 @@ export default function Home() {
       </p>
       <div className="griglia-2" style={{ marginTop: 24 }}>
         <Link href="/crea" className="pannello" style={{ textDecoration: "none", color: "inherit" }}>
-          <h2>1. Crea il personaggio</h2>
-          <p className="tenue">Descrivilo a parole o parti da un eroe pronto, e guarda la sua carta.</p>
+          <h2>1. Chi sei?</h2>
+          <p className="tenue">Raccontati: aspetto, storia, come combatti. Il gioco crea il tuo personaggio e da lì sarai tu in ogni scena.</p>
         </Link>
         <Link href="/arena" className="pannello" style={{ textDecoration: "none", color: "inherit" }}>
           <h2>2. Arena</h2>

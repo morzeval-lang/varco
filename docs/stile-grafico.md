@@ -10,6 +10,20 @@ Ogni personaggio e ogni sfondo ha un **segnaposto disegnato dal codice** (SVG), 
 Appena c'è un'illustrazione vera, la si mette in `public/immagini/` e si collega alla scheda: il gioco usa
 quella al posto del segnaposto, senza toccare altro.
 
+## Eroi: creati dal gioco, sul momento
+
+Gli eroi dei giocatori non si disegnano prima. In **Chi sei?** (`/crea`) il giocatore si racconta; Claude ricava
+aspetto, statistiche e background, e quando il giocatore conferma il gioco genera l'illustrazione una volta sola
+(`/api/ritratto`, con il prompt di `src/lib/grafica/prompt.ts`). Da lì in poi quel ritaglio è il personaggio in ogni scena.
+Senza `OPENAI_API_KEY` resta la figura disegnata dal codice. Gli eroi in `src/data/eroi.ts` sono solo esempi per provare l'arena.
+
+## Nemici: disegnati a mano in SVG
+
+Gli otto nemici hanno illustrazioni proprie in `public/immagini/nemici/<id>.svg`, generate da
+`strumenti/illustrazioni/disegna_nemici.py` (`python3 strumenti/illustrazioni/disegna_nemici.py`).
+Riquadro quadrato, piedi in basso al centro, rivolti a destra: si possono sostituire in qualsiasi momento con un PNG
+dello stesso formato cambiando il campo `immagine`.
+
 ## Come aggiungere un'illustrazione
 
 1. Apri la **Galleria** e premi **Copia prompt** sotto il personaggio. Il prompt ha già lo stile fisso,

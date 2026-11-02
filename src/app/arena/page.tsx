@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CartaPersonaggio } from "@/components/scena/CartaPersonaggio";
 import { EROI, NEMICI, UNIVERSI, arenaDi, combattenteDa, trovaEroe, trovaNemico, type SchedaNemico } from "@/data";
 import type { Essenza } from "@/lib/personaggio/essenza";
-import { caricaPersonaggio } from "@/lib/personaggio/salvataggio";
+import { caricaGiocatore, caricaPersonaggio } from "@/lib/personaggio/salvataggio";
 import type { Combattente, Copione, Mossa, TiroRegistrato } from "@/lib/rules/types";
 
 const ScenaCartoncini = dynamic(() => import("@/components/scena/ScenaCartoncini"), { ssr: false });
@@ -45,12 +45,17 @@ function descriviTiri(tiri: TiroRegistrato[]) {
 
 export default function Arena() {
   const [mio, setMio] = useState<Essenza | null>(null);
+  const [mioImmagine, setMioImmagine] = useState<string | undefined>();
+  const [haGiocatore, setHaGiocatore] = useState(false);
   const [eroeId, setEroeId] = useState<string>("mio");
   const [nemicoId, setNemicoId] = useState<string>("grosso_bruno");
   const [inCorso, setInCorso] = useState(false);
 
   useEffect(() => {
-    setMio(caricaPersonaggio());
+    const g = caricaGiocatore();
+    setMio(g?.essenza ?? caricaPersonaggio());
+    setMioImmagine(g?.immagine);
+    setHaGiocatore(Boolean(g));
     const q = new URLSearchParams(window.location.search);
     const e = q.get("eroe");
     const n = q.get("nemico");
@@ -64,7 +69,7 @@ export default function Arena() {
   const scheda = trovaEroe(eroeId);
   const eroe: Eroe = scheda
     ? { id: scheda.id, essenza: scheda.essenza, immagine: scheda.immagine, suggerimenti: [...scheda.mosseFirma.map((m) => m.frase), ...SUGGERIMENTI_GENERICI.slice(3)] }
-    : { id: "mio", essenza: mio, suggerimenti: SUGGERIMENTI_GENERICI };
+    : { id: "mio", essenza: mio, immagine: mioImmagine, suggerimenti: SUGGERIMENTI_GENERICI };
   const nemico = trovaNemico(nemicoId)!;
 
   if (inCorso) return <Combattimento eroe={eroe} nemico={nemico} onEsci={() => setInCorso(false)} />;
@@ -78,9 +83,9 @@ export default function Arena() {
 
       <h2 style={{ marginTop: 20 }}>Il tuo eroe</h2>
       <div className="griglia-carte" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
-        {[{ id: "mio", essenza: mio, sotto: "il tuo personaggio" }, ...EROI.map((e) => ({ id: e.id, essenza: e.essenza, sotto: e.classe, immagine: e.immagine }))].map((e) => (
+        {[{ id: "mio", essenza: mio, sotto: haGiocatore ? "sei tu" : "esempio: crealo in Chi sei?", immagine: mioImmagine }, ...EROI.map((e) => ({ id: e.id, essenza: e.essenza, sotto: `${e.classe} · d'esempio`, immagine: e.immagine }))].map((e) => (
           <button key={e.id} className={`carta scelta ${eroeId === e.id ? "selezionata" : ""}`} onClick={() => setEroeId(e.id)} style={{ padding: 0, background: "var(--pannello)", color: "inherit", textAlign: "left" }}>
-            <div className="carta-figura"><CartaPersonaggio essenza={e.essenza} immagine={"immagine" in e ? e.immagine : undefined} arena={arena.id} /></div>
+            <div className="carta-figura"><CartaPersonaggio essenza={e.essenza} immagine={e.immagine} arena={arena.id} /></div>
             <div className="carta-testo"><strong className="piccolo">{e.essenza.nome}</strong><span className="tenue piccolo">{e.sotto}</span></div>
           </button>
         ))}

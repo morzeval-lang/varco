@@ -22,7 +22,7 @@ Poi apri http://localhost:3000.
 
 | Pagina | Cosa fa |
 | --- | --- |
-| `/crea` | Descrivi il personaggio a parole (o parti da un eroe pronto) e vedi la sua carta |
+| `/crea` | "Chi sei?": ti racconti, il gioco crea il tuo personaggio (con illustrazione se c'è `OPENAI_API_KEY`) e lo usa in ogni scena |
 | `/galleria` | Eroi e bestiario per universo, con il prompt per generare l'illustrazione |
 | `/arena` | Scegli eroe e nemico, scrivi la mossa, il server tira i dadi, parte la scena, poi si torna al testo |
 | `/laboratorio` | Prova ogni personaggio, arena, mossa ed esito, e blocca la scena a un istante |

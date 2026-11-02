@@ -42,7 +42,8 @@ export function promptCartoncino(e: Essenza, descrizione?: string): string {
     `Weapon: ${e.arma.descrizione || e.arma.tipo} (${ARMA[e.arma.tipo]}).`,
     e.segnoDistintivo.tipo !== "nessuno" ? `Distinctive feature: ${e.segnoDistintivo.descrizione}.` : "",
     `Main colors ${e.palette.primario}, ${e.palette.secondario}, accent ${e.palette.accento}; skin ${e.pelle}; hair ${e.capelli.colore}.`,
-    "Plain transparent background (PNG), no ground, no shadow, single character only, centered.",
+    "Square image, the whole body fills about 85% of the height, feet near the bottom edge, centered horizontally.",
+    "Plain transparent background (PNG), no ground, no shadow, single character only.",
   ]
     .filter(Boolean)
     .join(" ");

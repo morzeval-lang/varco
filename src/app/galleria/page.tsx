@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { CartaPersonaggio } from "@/components/scena/CartaPersonaggio";
 import { EROI, NEMICI, UNIVERSI, arenaDi, type IdUniverso } from "@/data";
-import { salvaPersonaggio } from "@/lib/personaggio/salvataggio";
 import { promptCartoncino, promptSfondo } from "@/lib/grafica/prompt";
 
 function copia(testo: string) {
@@ -48,7 +47,6 @@ export default function Galleria() {
               <p className="piccolo">{e.mosseFirma.map((m) => m.nome).join(" · ")}</p>
               <div className="riga">
                 <Link href={`/arena?eroe=${e.id}`}><button>Gioca</button></Link>
-                <button className="secondario" onClick={() => salvaPersonaggio(e.essenza)}>Usa come mio</button>
                 <button className="secondario piccolo" onClick={() => copia(promptCartoncino(e.essenza, e.descrizione))} title="Copia il prompt per generare l'illustrazione">Copia prompt</button>
               </div>
             </div>

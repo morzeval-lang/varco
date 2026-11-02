@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
 import { EssenzaSchema, normalizzaEssenza, type Essenza } from "@/lib/personaggio/essenza";
+import { IdentitaSchema, type Identita } from "@/lib/personaggio/giocatore";
 import { MossaInterpretataSchema, normalizzaMossa } from "./mossa";
 import type { Mossa } from "@/lib/rules/types";
 
@@ -45,6 +46,20 @@ inventa con gusto quello che manca, scegli colori esadecimali coerenti, e distri
     descrizione,
   );
   return normalizzaEssenza(grezza);
+}
+
+/** Risposta a "Chi sei?": aspetto, statistiche e un background breve, tutto dalle parole del giocatore. */
+export async function generaIdentitaConClaude(descrizione: string): Promise<Identita> {
+  const grezza = await chiediStrutturato(
+    IdentitaSchema,
+    `Il giocatore ha risposto alla domanda "Chi sei?". Crea il suo personaggio.
+Nell'Essenza mantieni ogni dettaglio visivo che ha dato, inventa con gusto quello che manca, scegli colori esadecimali
+coerenti con un anime d'azione serio, e distribuisci 48 punti tra le quattro statistiche (ognuna da 6 a 16) in base
+a chi è e a come combatte. Poi riassumi origine, storia e motivazione restando fedele a quello che ha scritto:
+completa i vuoti senza contraddirlo. Tono serio ed epico, con un filo d'ironia se il giocatore ne usa.`,
+    descrizione,
+  );
+  return { ...grezza, essenza: normalizzaEssenza(grezza.essenza) };
 }
 
 export async function interpretaMossaConClaude(testo: string, contesto: string): Promise<Mossa> {
