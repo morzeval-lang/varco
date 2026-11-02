@@ -28,6 +28,12 @@ function casuale(seme: number) {
   };
 }
 
+/** Estremo di un raggio di luce, arrotondato: server e browser devono produrre lo stesso testo. */
+function puntoRaggio(sole: [number, number], gradi: number) {
+  const a = (gradi * Math.PI) / 180;
+  return `${Math.round(sole[0] + Math.cos(a) * 2200)},${Math.round(sole[1] + Math.sin(a) * 2200)}`;
+}
+
 /** Raggi di luce, polvere sospesa e vignetta: l'atmosfera comune alle scene. */
 function Atmosfera({ u, sole, colore, seme }: { u: string; sole: [number, number]; colore: string; seme: number }) {
   const r = casuale(seme);
@@ -49,7 +55,7 @@ function Atmosfera({ u, sole, colore, seme }: { u: string; sole: [number, number
         {raggi.map((a, i) => (
           <polygon
             key={i}
-            points={`${sole[0]},${sole[1]} ${sole[0] + Math.cos(((a - 3) * Math.PI) / 180) * 2200},${sole[1] + Math.sin(((a - 3) * Math.PI) / 180) * 2200} ${sole[0] + Math.cos(((a + 3) * Math.PI) / 180) * 2200},${sole[1] + Math.sin(((a + 3) * Math.PI) / 180) * 2200}`}
+            points={`${sole[0]},${sole[1]} ${puntoRaggio(sole, a - 3)} ${puntoRaggio(sole, a + 3)}`}
             fill={`url(#raggio-${u})`}
             transform={`rotate(${a + 180} ${sole[0]} ${sole[1]})`}
             opacity={0.45}
@@ -64,23 +70,28 @@ function Atmosfera({ u, sole, colore, seme }: { u: string; sole: [number, number
   );
 }
 
-/** Banco di nuvole allungate, illuminate da sotto. */
+/** Banco di nuvole stratificate: masse morbide e scure con il bordo basso acceso dal sole. */
 function Nubi({ y, colore, luce, seme }: { y: number; colore: string; luce: string; seme: number }) {
+  const u = useId().replace(/:/g, "");
   const r = casuale(seme);
+  const banchi = Array.from({ length: 6 }, () => ({ x: -100 + r() * 1800, y: y + r() * 150, l: 260 + r() * 420, h: 26 + r() * 24 }));
   return (
     <g>
-      {Array.from({ length: 9 }, (_, i) => {
-        const x = -100 + r() * 1800;
-        const yy = y + r() * 160;
-        const l = 160 + r() * 340;
-        const h = 14 + r() * 18;
-        return (
+      <defs>
+        <filter id={`nubi-${u}`} x="-20%" y="-50%" width="140%" height="200%">
+          <feGaussianBlur stdDeviation="7" />
+        </filter>
+      </defs>
+      <g filter={`url(#nubi-${u})`} opacity={0.85}>
+        {banchi.map((b, i) => (
           <g key={i}>
-            <ellipse cx={x} cy={yy} rx={l / 2} ry={h} fill={colore} />
-            <ellipse cx={x + 10} cy={yy + h * 0.55} rx={l / 2.3} ry={h * 0.35} fill={luce} />
+            <ellipse cx={b.x} cy={b.y} rx={b.l / 2} ry={b.h} fill={colore} />
+            <ellipse cx={b.x - b.l * 0.2} cy={b.y - b.h * 0.5} rx={b.l / 4} ry={b.h * 0.9} fill={colore} />
+            <ellipse cx={b.x + b.l * 0.15} cy={b.y - b.h * 0.3} rx={b.l / 3.5} ry={b.h * 0.8} fill={colore} />
+            <ellipse cx={b.x + b.l * 0.05} cy={b.y + b.h * 0.7} rx={b.l / 2.6} ry={b.h * 0.22} fill={luce} opacity={0.7} />
           </g>
-        );
-      })}
+        ))}
+      </g>
     </g>
   );
 }

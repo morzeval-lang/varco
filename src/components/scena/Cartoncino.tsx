@@ -4,15 +4,18 @@ import { Figura } from "./Figura";
 
 /**
  * Un personaggio come "cartoncino": figura immobile con il bordo bianco ritagliato e l'ombra,
- * come una sagoma di carta appoggiata sulla scena. Se c'è un'illustrazione (PNG con sfondo trasparente,
- * piedi in basso al centro, rivolta a destra) usa quella, altrimenti la figura SVG segnaposto.
+ * come una sagoma di carta appoggiata sulla scena. Se c'è un'illustrazione (PNG o SVG quadrato con sfondo
+ * trasparente, piedi in basso al centro, rivolta a destra) usa quella, altrimenti la figura SVG segnaposto.
  */
-export function Cartoncino({ essenza, immagine, altezza = 480 }: { essenza: Essenza; immagine?: string; altezza?: number }) {
+/** Lato del riquadro quadrato delle illustrazioni: i piedi stanno in basso al centro, 1 unità = 1 unità di scena. */
+const LATO = 600;
+
+export function Cartoncino({ essenza, immagine, lato = LATO }: { essenza: Essenza; immagine?: string; lato?: number }) {
   const id = `carta-${useId().replace(/:/g, "")}`;
   return (
     <g filter={`url(#${id})`}>
       <defs>
-        <filter id={id} filterUnits="userSpaceOnUse" x={-360} y={-640} width={720} height={720}>
+        <filter id={id} filterUnits="userSpaceOnUse" x={-420} y={-700} width={840} height={790}>
           <feMorphology in="SourceAlpha" operator="dilate" radius={7} result="espanso" />
           <feFlood floodColor="#fffaf0" result="carta" />
           <feComposite in="carta" in2="espanso" operator="in" result="bordo" />
@@ -28,7 +31,7 @@ export function Cartoncino({ essenza, immagine, altezza = 480 }: { essenza: Esse
         </filter>
       </defs>
       {immagine ? (
-        <image href={immagine} x={-altezza * 0.5} y={-altezza} width={altezza} height={altezza} preserveAspectRatio="xMidYMax meet" />
+        <image href={immagine} x={-lato * 0.5} y={-lato} width={lato} height={lato} preserveAspectRatio="xMidYMax meet" />
       ) : (
         <Figura essenza={essenza} />
       )}

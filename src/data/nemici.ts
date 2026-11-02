@@ -11,6 +11,7 @@ export const NEMICI: SchedaNemico[] = [
   // ───────────── Fantasy medievale ─────────────
   {
     id: "goblin_razziatore",
+    immagine: "/immagini/nemici/goblin_razziatore.svg",
     universo: "fantasy_medievale",
     rango: "gregario",
     descrizione: "Piccolo, verde, rumoroso. Ruba stivali, mai coppie complete.",
@@ -37,6 +38,7 @@ export const NEMICI: SchedaNemico[] = [
   },
   {
     id: "cavaliere_spettrale",
+    immagine: "/immagini/nemici/cavaliere_spettrale.svg",
     universo: "fantasy_medievale",
     rango: "campione",
     descrizione: "Un cavaliere morto che non ha capito di esserlo. Continua a fare la guardia a un castello che non c'è più.",
@@ -63,6 +65,7 @@ export const NEMICI: SchedaNemico[] = [
   },
   {
     id: "strega_palude",
+    immagine: "/immagini/nemici/strega_palude.svg",
     universo: "fantasy_medievale",
     rango: "campione",
     descrizione: "Vive in una capanna su zampe di rana. Fa ottime zuppe, ingredienti da non chiedere.",
@@ -89,6 +92,7 @@ export const NEMICI: SchedaNemico[] = [
   },
   {
     id: "re_troll",
+    immagine: "/immagini/nemici/re_troll.svg",
     universo: "fantasy_medievale",
     rango: "boss",
     descrizione: "Il troll che ha sfondato il portone di Rocca Grigia. Vuole il castello perché il ponte era troppo stretto.",
@@ -118,6 +122,7 @@ export const NEMICI: SchedaNemico[] = [
   // ───────────── Post-apocalisse ─────────────
   {
     id: "ghoul_radioattivo",
+    immagine: "/immagini/nemici/ghoul_radioattivo.svg",
     universo: "post_apocalisse",
     rango: "gregario",
     descrizione: "Ex operaio della centrale. Brilla al buio, e non in senso buono.",
@@ -143,6 +148,7 @@ export const NEMICI: SchedaNemico[] = [
   },
   {
     id: "grosso_bruno",
+    immagine: "/immagini/nemici/grosso_bruno.svg",
     universo: "post_apocalisse",
     rango: "gregario",
     descrizione: "Predone grosso come un armadio, con un elmo fatto da una pentola. Il capo della sua banda è lui, perché è l'unico.",
@@ -170,6 +176,7 @@ export const NEMICI: SchedaNemico[] = [
   },
   {
     id: "androide_custode",
+    immagine: "/immagini/nemici/androide_custode.svg",
     universo: "post_apocalisse",
     rango: "campione",
     descrizione: "Robot di sicurezza di un centro commerciale. Il centro non c'è più, ma lui continua a chiedere lo scontrino.",
@@ -196,6 +203,7 @@ export const NEMICI: SchedaNemico[] = [
   },
   {
     id: "regina_rottami",
+    immagine: "/immagini/nemici/regina_rottami.svg",
     universo: "post_apocalisse",
     rango: "boss",
     descrizione: "Regina autoproclamata della discarica più grande delle Lande. Il suo trono è un'auto pressata, il suo esercito sono i rottami stessi.",
