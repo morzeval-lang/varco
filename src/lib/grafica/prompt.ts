@@ -6,9 +6,16 @@ import type { Essenza } from "@/lib/personaggio/essenza";
  * Sono in inglese perché i generatori rendono meglio così.
  */
 
+/**
+ * "Stile Varco": cartone d'avventura nostalgico. Forme tonde e morbide, arti gommosi "a tubo", teste grandi,
+ * occhioni espressivi, capelli a ciuffi appuntiti, tecnologia arrotondata, tinte pastello calde.
+ * Si descrivono i tratti e non si nominano autori o opere esistenti.
+ */
 export const STILE =
-  "2D anime illustration, clean bold black outlines, flat cel shading with two tones, vibrant but slightly muted palette, " +
-  "90s fantasy anime look, crisp and readable silhouette, no text, no watermark";
+  "2D retro cartoon adventure illustration, thick clean dark outlines, flat colors with one simple shadow tone, " +
+  "rounded chunky shapes, rubbery noodle-like limbs, big round head, large expressive eyes with bright highlights, " +
+  "bold spiky hair tufts, rounded retro-futuristic gadgets, warm sunny pastel palette, nostalgic 80s-90s saturday morning cartoon " +
+  "and adventure manga feel, playful but heroic, crisp readable silhouette, no text, no watermark";
 
 const CORPORATURA: Record<Essenza["corporatura"], string> = {
   esile: "slender build",

@@ -10,7 +10,7 @@ Gioco di ruolo testuale a turni nel multiverso. Design: https://claude.ai/artifa
 - **Claude interpreta e racconta, non decide.** Le chiamate a Claude stanno in `src/lib/gm/` (solo server)
   e restituiscono dati strutturati validati con zod. Senza `ANTHROPIC_API_KEY` tutto deve funzionare
   in modalità demo (ripieghi a parole chiave).
-- **Scene 2D "a cartoncini", niente 3D.** Sfondo fisso + personaggi immobili in posa che scorrono (stile anime).
+- **Scene 2D "a cartoncini", niente 3D.** Sfondo fisso + personaggi immobili in posa che scorrono, in "Stile Varco" (forme tonde, occhioni, capelli a punte, tinte calde; vedi `docs/stile-grafico.md`).
   `src/components/scena/` legge un `Copione` e il tempo t, e non cambia lo stato di gioco. Nuove mosse si
   aggiungono come archetipo + elemento + intensità, non come animazioni su misura.
 - **Contenuti come dati.** Universi, eroi e nemici stanno in `src/data/`. Le illustrazioni definitive vanno in

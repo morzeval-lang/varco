@@ -1,6 +1,6 @@
 # Stile grafico di VARCO
 
-Le scene sono **2D stile anime "a cartoncini"**: sfondo fisso dipinto, personaggi immobili già in posa
+Le scene sono **2D "a cartoncini"** nello **Stile Varco**: sfondo fisso dipinto, personaggi immobili già in posa
 di combattimento che scorrono sopra lo sfondo come sagome di carta. Niente animazione dei corpi: si muovono
 le sagome intere (scorrono, saltano, vengono spinte indietro, cadono di piatto), più effetti e testi in stile manga.
 
@@ -25,9 +25,17 @@ quella al posto del segnaposto, senza toccare altro.
    - arene in `src/data/universi.ts`: `immagine: "/immagini/sfondi/cortile_castello.png"`
 5. Controlla il risultato nel **Laboratorio**: ferma la scena a un istante e guarda proporzioni e posizione dei piedi.
 
-## Regole di stile
+## Regole di stile: lo "Stile Varco"
 
-- Contorni neri decisi, colorazione piatta a due toni, niente sfumature realistiche.
-- Palette per universo: Fantasy medievale con viola del crepuscolo e calore delle torce; Post-apocalisse con
-  arancio polveroso e ruggine.
+Un cartone d'avventura nostalgico, nostro: la morbidezza dei cartoni surreali di oggi incontra l'energia dei
+manga d'avventura anni '80 e '90.
+
+- **Personaggi:** testa grande e tonda, occhioni con doppio riflesso, sopracciglia decise, guance rosate,
+  capelli a ciuffi grossi e appuntiti, arti morbidi "a tubo" senza gomiti, mani tonde, scarponi grandi.
+- **Contorni:** scuri e spessi, uguali dappertutto. Colori piatti con una sola tinta d'ombra e un riflesso chiaro.
+- **Ambienti:** colline tonde, nuvole soffici a bolle, rovine e tecnologia arrotondate (cupole, capsule, antenne
+  con la pallina), una leggera grana calda e una vignetta morbida per l'effetto "vecchia videocassetta".
+- **Palette per universo:** Fantasy medievale con cielo azzurro che sfuma in pesca, prati verde menta, tetti corallo;
+  Post-apocalisse con tramonto arancio-rosa, sole a strisce, rovine lilla e azzurro polvere.
+- **Nei prompt** si descrivono i tratti, non si nominano autori, opere o personaggi esistenti.
 - Personaggi originali: ispirati a generi e stereotipi, mai copie di personaggi di giochi o anime esistenti.

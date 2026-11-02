@@ -2,7 +2,7 @@
   "name": "varco",
   "version": "0.1.0",
   "private": true,
-  "description": "VARCO: gioco di ruolo testuale a turni nel multiverso, con scene clou 2D in stile anime",
+  "description": "VARCO: gioco di ruolo testuale a turni nel multiverso, con scene clou 2D a cartoncini",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

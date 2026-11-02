@@ -134,7 +134,7 @@ export default function CreaPersonaggio() {
         ))}
       </div>
       <p className="tenue piccolo" style={{ marginTop: 16 }}>
-        La figura è un segnaposto disegnato dal codice. Le illustrazioni anime definitive si aggiungono in
+        La figura è un segnaposto disegnato dal codice. Le illustrazioni definitive si aggiungono in
         <code> public/immagini</code> (vedi <code>docs/stile-grafico.md</code>).
       </p>
     </main>

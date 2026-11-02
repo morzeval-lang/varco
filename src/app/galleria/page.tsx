@@ -49,7 +49,7 @@ export default function Galleria() {
               <div className="riga">
                 <Link href={`/arena?eroe=${e.id}`}><button>Gioca</button></Link>
                 <button className="secondario" onClick={() => salvaPersonaggio(e.essenza)}>Usa come mio</button>
-                <button className="secondario piccolo" onClick={() => copia(promptCartoncino(e.essenza, e.descrizione))} title="Copia il prompt per generare l'illustrazione anime">Copia prompt</button>
+                <button className="secondario piccolo" onClick={() => copia(promptCartoncino(e.essenza, e.descrizione))} title="Copia il prompt per generare l'illustrazione">Copia prompt</button>
               </div>
             </div>
           </article>
@@ -68,7 +68,7 @@ export default function Galleria() {
               <p className="piccolo">{n.mosse.map((m) => m.nome).join(" · ")}</p>
               <div className="riga">
                 <Link href={`/arena?nemico=${n.id}`}><button className="secondario">Affronta</button></Link>
-                <button className="secondario piccolo" onClick={() => copia(promptCartoncino(n.essenza, n.descrizione))} title="Copia il prompt per generare l'illustrazione anime">Copia prompt</button>
+                <button className="secondario piccolo" onClick={() => copia(promptCartoncino(n.essenza, n.descrizione))} title="Copia il prompt per generare l'illustrazione">Copia prompt</button>
               </div>
             </div>
           </article>
