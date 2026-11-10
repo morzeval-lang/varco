@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { costoEnergia, difesa, modificatore, risolviMossa } from "./combat";
+import { costoEnergia, difesa, modificatore, recuperaEnergia, risolviMossa } from "./combat";
 import { Dadi } from "./rng";
 import type { Combattente, Mossa } from "./types";
 
@@ -107,5 +107,16 @@ describe("risolviMossa", () => {
     const r = risolviMossa({ attore: { ...eroe, pv: 29 }, bersaglio: ghoul, mossa: { archetipo: "cura", elemento: "luce", intensita: 1 }, seme: 9, arena: "t" });
     expect(r.copione.esito).toBe("riuscito");
     expect(r.attore.pv).toBe(30);
+  });
+});
+
+describe("recuperaEnergia", () => {
+  const base: Combattente = { id: "x", nome: "X", statistiche: { forza: 12, agilita: 12, mente: 12, tempra: 12 }, pv: 10, pvMax: 30, energia: 3, energiaMax: 10, stati: [] };
+  it("ricarica senza superare il massimo", () => {
+    expect(recuperaEnergia(base).energia).toBe(5);
+    expect(recuperaEnergia({ ...base, energia: 9 }).energia).toBe(10);
+  });
+  it("chi è a terra non recupera", () => {
+    expect(recuperaEnergia({ ...base, pv: 0 }).energia).toBe(3);
   });
 });

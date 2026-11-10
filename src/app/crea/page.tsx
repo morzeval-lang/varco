@@ -30,9 +30,13 @@ export default function ChiSei() {
   const [bozza, setBozza] = useState<Bozza | null>(null);
   const [stato, setStato] = useState<"libero" | "leggo" | "ritraggo">("libero");
   const [avviso, setAvviso] = useState<string | null>(null);
+  /** Se si arriva da una stanza, dopo la creazione si torna lì. */
+  const [ritorno, setRitorno] = useState<string | null>(null);
 
   useEffect(() => {
     setGiocatore(caricaGiocatore());
+    const r = new URLSearchParams(window.location.search).get("ritorno");
+    if (r && /^\/stanza\/[A-Za-z0-9]+$/.test(r)) setRitorno(r);
     setPronto(true);
   }, []);
 
@@ -114,7 +118,8 @@ export default function ChiSei() {
             </p>
             {avviso && <p className="piccolo" style={{ color: "var(--pericolo)", margin: 0 }}>{avviso}</p>}
             <div className="riga">
-              <Link href="/arena"><button>In arena →</button></Link>
+              {ritorno && <Link href={ritorno}><button>Torna alla stanza →</button></Link>}
+              <Link href="/arena"><button className={ritorno ? "secondario" : undefined}>In arena →</button></Link>
               <button className="secondario" onClick={ricomincia}>Ricomincia da capo</button>
             </div>
           </Scheda>

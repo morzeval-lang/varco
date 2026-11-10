@@ -24,5 +24,6 @@ Gioco di ruolo testuale a turni nel multiverso. Design: https://claude.ai/artifa
 - `npm run typecheck` controlla i tipi
 - `npm run build` build di produzione
 
-Pagine utili: `/crea` ("Chi sei?": il giocatore si racconta e nasce il suo personaggio), `/galleria` (eroi e bestiario, prompt per le illustrazioni),
+Pagine utili: `/stanza` (multigiocatore: link d'invito, racconto condiviso, scontri a turno; regole pure in
+`src/lib/stanza/logica.ts`, archivio in memoria o Supabase in `archivio.ts`), `/crea` ("Chi sei?": il giocatore si racconta e nasce il suo personaggio), `/galleria` (eroi e bestiario, prompt per le illustrazioni),
 `/arena` (scelta sfida, combattimento testo → scena → testo), `/laboratorio` (scene bloccabili a un istante).

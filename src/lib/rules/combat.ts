@@ -63,6 +63,14 @@ export function costoEnergia(intensita: Intensita): number {
   return (intensita - 1) * 3;
 }
 
+/** Energia recuperata all'inizio di ogni proprio turno: senza, gli scontri lunghi finiscono a mosse leggere. */
+export const RECUPERO_ENERGIA = 2;
+
+export function recuperaEnergia(c: Combattente, quanto = RECUPERO_ENERGIA): Combattente {
+  if (c.pv <= 0) return c;
+  return { ...c, energia: Math.min(c.energiaMax, c.energia + quanto) };
+}
+
 /** Difesa base: 10 + Agilità, più bonus se il bersaglio è in guardia. */
 export function difesa(c: Combattente): number {
   return 10 + modificatore(c.statistiche.agilita) + (c.stati.includes("in_guardia") ? 3 : 0);

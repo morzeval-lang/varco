@@ -3,11 +3,7 @@ import { z } from "zod";
 import { risolviMossa } from "@/lib/rules/combat";
 import { semeDadi } from "@/lib/rules/seme";
 import { ARCHETIPI, ELEMENTI, type Mossa } from "@/lib/rules/types";
-import { interpretaMossaDemo } from "@/lib/gm/mossa";
-import { claudeDisponibile, interpretaMossaConClaude } from "@/lib/gm/claude";
-import { EROI } from "@/data";
-
-const MOSSE_FIRMA = new Map(EROI.flatMap((e) => e.mosseFirma).map((m) => [m.frase.trim().toLowerCase(), m]));
+import { interpretaMossa, type FonteMossa } from "@/lib/gm/interpreta";
 
 const Stat = z.number().int().min(1).max(30);
 const CombattenteSchema = z.object({
@@ -50,26 +46,11 @@ export async function POST(req: Request) {
   const { partita, turno, arena, attore, bersaglio, testo, mossa: mossaStrutturata } = parsed.data;
 
   let mossa: Mossa;
-  let fonte: "claude" | "demo" | "strutturata" | "firma" = "strutturata";
-  const firma = testo ? MOSSE_FIRMA.get(testo.trim().toLowerCase()) : undefined;
-  if (firma) {
-    // Una mossa firma dell'eroe scritta così com'è: niente interpretazione, nome e forma sono già noti.
-    const { nome, archetipo, elemento, intensita } = firma;
-    mossa = { nome, archetipo, elemento, intensita, bonusNarrativo: 1 };
-    fonte = "firma";
+  let fonte: FonteMossa | "strutturata" = "strutturata";
+  if (testo) {
+    ({ mossa, fonte } = await interpretaMossa(testo, `${attore.nome} affronta ${bersaglio.nome}.`));
   } else if (mossaStrutturata) {
     mossa = { ...mossaStrutturata, bonusNarrativo: 0 };
-  } else if (testo) {
-    fonte = "demo";
-    mossa = interpretaMossaDemo(testo);
-    if (claudeDisponibile()) {
-      try {
-        mossa = await interpretaMossaConClaude(testo, `${attore.nome} affronta ${bersaglio.nome}.`);
-        fonte = "claude";
-      } catch (e) {
-        console.error("Interpretazione con Claude fallita, uso la modalità demo:", e);
-      }
-    }
   } else {
     return NextResponse.json({ errore: "Serve un testo o una mossa." }, { status: 400 });
   }

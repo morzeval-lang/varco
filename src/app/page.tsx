@@ -7,7 +7,11 @@ export default function Home() {
       <p className="tenue">
         Gioco di ruolo testuale a turni nel multiverso. Si gioca scrivendo; i momenti clou diventano scene a cartoncini in stile anime d'azione anni '90.
       </p>
-      <div className="griglia-2" style={{ marginTop: 24 }}>
+      <Link href="/stanza" className="pannello" style={{ display: "block", marginTop: 24, textDecoration: "none", color: "inherit", borderColor: "var(--accento)" }}>
+        <h2>⚔ Gioca con gli amici</h2>
+        <p className="tenue" style={{ margin: 0 }}>Crea una stanza, manda il link alla squadra (fino a 4) e vivete l&apos;avventura insieme: ognuno scrive cosa fa, il GM racconta, negli scontri si va a turno.</p>
+      </Link>
+      <div className="griglia-2" style={{ marginTop: 16 }}>
         <Link href="/crea" className="pannello" style={{ textDecoration: "none", color: "inherit" }}>
           <h2>1. Chi sei?</h2>
           <p className="tenue">Raccontati: aspetto, storia, come combatti. Il gioco crea il tuo personaggio e da lì sarai tu in ogni scena.</p>

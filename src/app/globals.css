@@ -139,3 +139,8 @@ button.secondario { background: transparent; color: var(--testo); border: 1px so
 .etichetta.rango-campione { color: #ff9a8a; border-color: #ff9a8a; }
 .scelta { cursor: pointer; border: 2px solid transparent; }
 .scelta.selezionata { border-color: var(--accento); }
+
+/* stanza multigiocatore: squadra a sinistra, racconto a destra (su telefono una sotto l'altra) */
+.griglia-stanza { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 820px) { .griglia-stanza { grid-template-columns: 260px 1fr; } }
+.racconto-stanza { max-height: 60vh; overflow-y: auto; padding-right: 4px; }

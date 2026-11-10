@@ -22,13 +22,21 @@ Poi apri http://localhost:3000.
 
 | Pagina | Cosa fa |
 | --- | --- |
+| `/stanza` | **Gioca con gli amici**: crei una stanza, mandi il link, fino a 4 giocatori nello stesso racconto |
 | `/crea` | "Chi sei?": ti racconti, il gioco crea il tuo personaggio (con illustrazione se c'è `OPENAI_API_KEY`) e lo usa in ogni scena |
 | `/galleria` | Eroi e bestiario per universo, con il prompt per generare l'illustrazione |
 | `/arena` | Scegli eroe e nemico, scrivi la mossa, il server tira i dadi, parte la scena, poi si torna al testo |
 | `/laboratorio` | Prova ogni personaggio, arena, mossa ed esito, e blocca la scena a un istante |
 
-Con `ANTHROPIC_API_KEY` in `.env.local`, Claude crea l'Essenza del personaggio e interpreta le mosse scritte.
-Senza chiave si usano ripieghi a parole chiave.
+Con `ANTHROPIC_API_KEY` in `.env.local`, Claude crea l'Essenza del personaggio, interpreta le mosse scritte e
+racconta nelle stanze. Senza chiave si usano ripieghi a parole chiave.
+
+Per provare una stanza in più giocatori in locale basta aprire lo stesso link in due browser diversi
+(o una finestra normale e una in incognito).
+
+## Giocare online
+
+Il sito va su Vercel con le stanze salvate su Supabase: i passi sono in [docs/pubblicare.md](docs/pubblicare.md).
 
 ## Struttura
 
@@ -41,6 +49,8 @@ src/
   lib/rules/           motore regole deterministico (dadi con seme, combattimento) + test
   lib/gm/              Claude come GM (solo server) e ripieghi demo
   lib/personaggio/     schema dell'Essenza, generatore demo, salvataggio locale
+  lib/stanza/          stanze multigiocatore: regole del giro e dei turni, archivio (memoria o Supabase)
+supabase/schema.sql    tabelle da creare su Supabase
 ```
 
 ## Roadmap
